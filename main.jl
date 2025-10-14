@@ -8,6 +8,8 @@ using RipQP
 
 #import .MyProblem: evalf
 
+teste
+
 #include("ModAlgConst.jl")
 include("MyProblem.jl")
 
