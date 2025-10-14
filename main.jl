@@ -2,42 +2,48 @@
 using LinearAlgebra
 using Printf
 using RipQP
+using MOProblems
 
 #import Pkg
 #Pkg.add("Revise")
 
 #import .MyProblem: evalf
 
-teste
-
 #include("ModAlgConst.jl")
-include("MyProblem.jl")
+#include("MyProblem.jl")
 
 #import .MyProblem: evalf
-using .MyProblem
+#using .MyProblem
 
 # Selecionar problema e seed
-MyProblem.PROB.name = "AP2"
-MyProblem.PROB.seed = 2025
+#MyProblem.PROB.name = "AP2"
+#MyProblem.PROB.seed = 2025
 
 # Inicializar
-n, m, x, l, u, strconvex, scaleF, checkder = MyProblem.inip()
+#n, m, x, l, u, strconvex, scaleF, checkder = MyProblem.inip()
 
+problem = MOProblems.AP1()
+n = problem.nvar
+m = problem.nobj
+l = problem.bounds[1]
+u = problem.bounds[2]
+x = l .+ (u - l) .* rand(n)
+
+#=
 @printf("Problem = %s\n", MyProblem.PROB.name)
 @printf("Seed = %d\n", MyProblem.PROB.seed)
 @printf("n = %d\n",n)
 println("x = ",x)
-
-T = eltype(x)
-
-methods(evalf)
+=#
 
 
-f1 = evalf(n,x,1)
-f2 = evalf(n,x,2)
+
+
+f1 = eval_f(problem,x,1)
+f2 = eval_f(problem,x,2)
 println("f1 = ",f1)
 println("f2 = ",f2)
-
+exit(1)
 
 #=
 include("ModAlgConst.jl")
