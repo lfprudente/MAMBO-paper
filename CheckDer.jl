@@ -1,3 +1,4 @@
+using .ModTypes: T
 using .ModAlgConst: MACHEPS12, MACHEPS13
 
 # ============================================================
@@ -7,7 +8,7 @@ using .ModAlgConst: MACHEPS12, MACHEPS13
 # ------------------------------------------------------------
 # Main routine: checks user-supplied derivatives
 # ------------------------------------------------------------
-function checkdF(::Type{T}, n::Int, m::Int, 
+function checkdF(n::Int, m::Int, 
                  xini::Vector{T},
                  l::Vector{T}, 
                  u::Vector{T}) where {T<:AbstractFloat}
@@ -34,7 +35,7 @@ function checkdF(::Type{T}, n::Int, m::Int,
         x[i] = clamp(x[i], l[i], u[i])
     end
 
-    @printf("\nDerivatives will be tested at the perturbed initial guess:")
+    @printf("\nDerivatives will be tested at the perturbed initial guess:\n")
     for i in 1:n
         @printf("x(%6d) = %15.8E\n", i, x[i])
     end
@@ -54,7 +55,7 @@ function checkdF(::Type{T}, n::Int, m::Int,
         elseif lowercase(answer[1]) == 's'
             continue
         elseif lowercase(answer[1]) == 'y'
-            checkg(T, n, x, i)
+            checkg(n, x, i)
         end
     end
 
@@ -73,7 +74,7 @@ function checkdF(::Type{T}, n::Int, m::Int,
         elseif lowercase(answer[1]) == 's'
             continue
         elseif lowercase(answer[1]) == 'y'
-            checkh(T, n, x, i)
+            checkh(n, x, i)
         end
     end
 end
@@ -82,8 +83,8 @@ end
 # ------------------------------------------------------------
 # Checks gradient via finite differences
 # ------------------------------------------------------------
-function checkg(::Type{T}, n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
-    @printf("Index             evalg     Central diff (two steps)     Absolute error")
+function checkg(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
+    @printf("Index             evalg     Central diff (two steps)     Absolute error\n")
 
     g = Vector{T}(undef, n)
     evalg!(n, x, g, ind)
@@ -121,7 +122,7 @@ end
 # ------------------------------------------------------------
 # Checks Hessian via finite differences of gradients
 # ------------------------------------------------------------
-function checkh(::Type{T}, n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
+function checkh(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
     @printf("\nHessian matrix of the objective function, column by column.")
 
     g = Vector{T}(undef, n)
@@ -160,7 +161,7 @@ function checkh(::Type{T}, n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFlo
 
             if elem != 0.0 || hdiff1 != 0.0 || hdiff2 != 0.0
                 nullcol = false
-                @printf("Index             evalh     Incr. Quoc. (two steps)     Absolute error")
+                @printf("Index             evalh     Incr. Quoc. (two steps)     Absolute error\n")
                 @printf("%5d   %15.8E   %15.8E   %15.8E   %15.8E\n",
                         i, elem, hdiff1, hdiff2, tmp_err)
             end
@@ -178,7 +179,7 @@ function checkh(::Type{T}, n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFlo
 
     println()
     for j in 1:n
-        @printf("Column %6d Maximum absolute error = %15.8E\n", j, maxcoe[j])
+        @printf("Column %6d,    Maximum absolute error = %15.8E\n", j, maxcoe[j])
     end
     @printf("\nOverall maximum absolute error = %15.8E\n", maxerr)
 end

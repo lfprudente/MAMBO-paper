@@ -1,7 +1,9 @@
-using .ModAlgConst: MAXOUTITER 
+using .ModTypes: T
+using .ModAlgConst: MAXOUTITER, MACHEPS12
+using .SafeEval
 
 """
-asaMOP(T, n, m, x, l, u; scaleF=true, iprint=true, iprintLS=false)
+asaMOP(n, m, x, l, u; scaleF=true, iprint=true, iprintLS=false)
 
 Tradução da subrotina Fortran `asaMOP`. Resolve:
     min F(x) sujeito a l ≤ x ≤ u
@@ -21,11 +23,11 @@ Saída:
 - state::NamedTuple          # (outiter, time, nfev, ngev, theta, inform)
 """
 
-function asaMOP(::Type{T},n::Int, m::Int,
+function asaMOP!(n::Int, m::Int,
                 x::Vector{T},
                 l::Vector{T},
                 u::Vector{T};
-                epsopt::T = T(1.0e-8),
+                epsopt::T = 5.0*MACHEPS12,
                 scaleF::Bool = true,
                 iprint::Bool = true,
                 iprintLS::Bool = false) where {T<:AbstractFloat}
@@ -42,6 +44,7 @@ function asaMOP(::Type{T},n::Int, m::Int,
 
     # Inicialize vectors and matrices
     F    = Vector{T}(undef, m)
+    g    = Vector{T}(undef, n)
     gphi = Vector{T}(undef, m)
     tmp  = Vector{T}(undef, m)
     JF   = Matrix{T}(undef, m, n)
@@ -54,18 +57,18 @@ function asaMOP(::Type{T},n::Int, m::Int,
     # ou passar por argumento nas funções. Vamos tratar isso quando chegarmos ao inner.
 
     # Scale problem
-    sF = scalefactor(n, m, x, scaleF)  # definido em evals.jl (placeholder por ora)
+    sF[] = scalefactor(n, m, x, scaleF)  # definido em evals.jl (placeholder por ora)
 
     # Print problem information
     if iprint
         @printf("\n-------------------------------------------------------------------------------")
-        @printf("\n             Newton-type method for Multiobjective Optimization                ")
+        @printf("\n         Steepest descent algorithm for Multiobjective Optimization            ")
         @printf("\n-------------------------------------------------------------------------------")
         @printf("\nNumber of variables: %6d\nNumber of functions: %6d\n", n, m)
         if scaleF
-            @printf("\nSmallest objective scale factor  : %.0e ", min(sF))
+            @printf("\nSmallest objective scale factor: %.0e ", minimum(sF[]))
         end
-        @printf("\nNumeric type: %s\n\n", string(T))
+        @printf("\nFloating-point type            : %s\n\n", string(T))
     end
 
     # Counters
@@ -99,7 +102,7 @@ function asaMOP(::Type{T},n::Int, m::Int,
         # Compute Jacobian JF
         
         for i in 1:m
-            g, infofun = sevalg(n, x, i)  # (grad_i(x), infofun) — definido em evals.jl
+            g, infofun = sevalg!(n, x, g, i)  # (grad_i(x), infofun) — definido em evals.jl
             ngev += 1
             if infofun != 0
                 inform = -1
@@ -107,7 +110,9 @@ function asaMOP(::Type{T},n::Int, m::Int,
             end
             @views JF[i, :] .= g
         end
-
+        println(F)
+        println(JF)
+        
         # Compute projected gradient direction and norms
         vB, _, infoIS = evaldSD(n, m, l, u, x, JF, 1)  # definido em inner.jl (assinatura inclui "1" como no Fortran)
         if infoIS != 0
