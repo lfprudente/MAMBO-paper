@@ -1,9 +1,10 @@
+#=
 module ModProbData
 
 using ..ModTypes: T
 
 export PROBLEM, SEED, sF
-
+=#
 # ============================================================
 # Global data module
 #
@@ -22,4 +23,4 @@ const SEED = Ref{Int}(0)
 # Scaling factors (allocated later, with any numeric type)
 const sF = Ref(Vector{T}())  # type can be redefined dynamically
 
-end # module
+#end # module

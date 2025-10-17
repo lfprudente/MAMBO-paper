@@ -1,7 +1,3 @@
-using .ModTypes: T
-using .MyProblem: evalg!
-using .ModProbData: sF
-using .ModAlgConst: MACHEPS12
 
 """
     scalefactor!(n::Int, m::Int, x::Vector{T}, sF::Vector{T}, scaleF::Bool) where {T<:AbstractFloat}
@@ -18,14 +14,14 @@ function scalefactor(n::Int, m::Int, x::Vector{T}, scaleF::Bool)
     g  = Vector{T}(undef, n)
 
     # Allocate or resize global scaling factors vector
-    sF[] = Vector{T}(undef, m)
+    sF = Vector{T}(undef, m)
     if scaleF
         for ind in 1:m
             evalg!(n, x, g, ind)
-            sF[][ind] = max(MACHEPS12, one(T) / max(one(T), norm(g, Inf)))
+            sF[ind] = max(MACHEPS12, one(T) / max(one(T), norm(g, Inf)))
         end
     else
-        fill!(sF[], one(T))
+        fill!(sF, one(T))
     end
-    return sF[]
+    return sF
 end

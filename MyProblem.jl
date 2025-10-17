@@ -1,4 +1,5 @@
-module MyProblem
+#=
+module MyPROBLEM
 
 using LinearAlgebra
 using Random
@@ -7,16 +8,16 @@ using ..ModTypes: T
 using ..ModProbData: PROBLEM, SEED
 
 export inip, evalf, evalg!, evalh!
+=#
 
 # ======================================================================
-# Inicialização do problemlema
+# Inicialização do PROBLEMlema
 # ======================================================================
 
-function inip()
-    problem = PROBLEM[]
-    rng = MersenneTwister(SEED[])
+function inip(PROBLEM::String,SEED::Int)
+    rng = MersenneTwister(SEED)
 
-    if problem == "AP1"
+    if PROBLEM == "AP1"
         n, m = 2, 3
         l = fill(T(-1e1), n)
         u = fill(T( 1e1), n)
@@ -24,7 +25,7 @@ function inip()
         strconvex = Bool[false, true, true]
         scaleF, checkder = true, false
 
-    elseif problem == "AP2"
+    elseif PROBLEM == "AP2"
         n, m = 1, 2
         l = fill(T(-1e2), n)
         u = fill(T( 1e2), n)
@@ -32,7 +33,7 @@ function inip()
         strconvex = Bool[true, true]
         scaleF, checkder = true, false
 
-    elseif problem == "AP3"
+    elseif PROBLEM == "AP3"
         n, m = 2, 2
         l = fill(T(-1e2), n)
         u = fill(T( 1e2), n)
@@ -40,7 +41,7 @@ function inip()
         strconvex = Bool[false, false]
         scaleF, checkder = true, false
 
-    elseif problem == "AP4"
+    elseif PROBLEM == "AP4"
         n, m = 3, 3
         l = fill(T(-1e1), n)
         u = fill(T( 1e1), n)
@@ -48,7 +49,7 @@ function inip()
         strconvex = Bool[false, true, true]
         scaleF, checkder = true, false
 
-    elseif problem == "BK1"
+    elseif PROBLEM == "BK1"
         n, m = 2, 2
         l = T[-5, -5]
         u = T[10, 10]
@@ -57,7 +58,7 @@ function inip()
         scaleF, checkder = true, false
 
     else
-        error("problemlema desconhecido: $problem")
+        error("PROBLEMlema desconhecido: $PROBLEM")
     end
 
     return n, m, x, l, u, strconvex, scaleF, checkder
@@ -68,10 +69,9 @@ end
 # ======================================================================
 
 function evalf(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
-    problem = PROBLEM[]
     f = zero(T)
 
-    if problem == "AP1"
+    if PROBLEM == "AP1"
         if ind == 1
             f = 0.25T((x[1]-1)^4 + 2*(x[2]-2)^4)
         elseif ind == 2
@@ -80,14 +80,14 @@ function evalf(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
             f = (1/6) * (exp(-x[1]) + 2*exp(-x[2]))
         end
 
-    elseif problem == "AP2"
+    elseif PROBLEM == "AP2"
         f = ind == 1 ? x[1]^2 - 4 : (x[1]-1)^2
 
-    elseif problem == "AP3"
+    elseif PROBLEM == "AP3"
         f = ind == 1 ? 0.25*((x[1]-1)^4 + 2*(x[2]-2)^4) :
                        (x[2]-x[1]^2)^2 + (1-x[1])^2
 
-    elseif problem == "AP4"
+    elseif PROBLEM == "AP4"
         if ind == 1
             f = (1/9)*((x[1]-1)^4 + 2*(x[2]-2)^4 + 3*(x[3]-3)^4)
         elseif ind == 2
@@ -96,7 +96,7 @@ function evalf(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
             f = (1/12)*(3*exp(-x[1]) + 4*exp(-x[2]) + 3*exp(-x[3]))
         end
 
-    elseif problem == "BK1"
+    elseif PROBLEM == "BK1"
         f = ind == 1 ? x[1]^2 + x[2]^2 : (x[1]-5)^2 + (x[2]-5)^2
     end
 
@@ -109,10 +109,9 @@ end
 
 function evalg!(n::Int, x::Vector{T}, g::Vector{T}, ind::Int) where {T<:AbstractFloat}
 
-    problem = PROBLEM[]
     g .= zeros(T, n)
 
-    if problem == "AP1"
+    if PROBLEM == "AP1"
         if ind == 1
             g .= [(x[1]-1)^3, 2*(x[2]-2)^3]
         elseif ind == 2
@@ -122,10 +121,10 @@ function evalg!(n::Int, x::Vector{T}, g::Vector{T}, ind::Int) where {T<:Abstract
             g .= [-1/6*exp(-x[1]), -1/3*exp(-x[2])]
         end
 
-    elseif problem == "AP2"
+    elseif PROBLEM == "AP2"
         g .= ind == 1 ? [2x[1]] : [2*(x[1]-1)]
 
-    elseif problem == "AP3"
+    elseif PROBLEM == "AP3"
         if ind == 1
             g .= [(x[1]-1)^3, 2*(x[2]-2)^3]
         else
@@ -133,7 +132,7 @@ function evalg!(n::Int, x::Vector{T}, g::Vector{T}, ind::Int) where {T<:Abstract
             g[2] =  2*(x[2]-x[1]^2)
         end
 
-    elseif problem == "AP4"
+    elseif PROBLEM == "AP4"
         if ind == 1
             g .= [4/9*(x[1]-1)^3, 8/9*(x[2]-2)^3, 12/9*(x[3]-3)^3]
         elseif ind == 2
@@ -143,7 +142,7 @@ function evalg!(n::Int, x::Vector{T}, g::Vector{T}, ind::Int) where {T<:Abstract
             g .= [-1/4*exp(-x[1]), -1/3*exp(-x[2]), -1/4*exp(-x[3])]
         end
 
-    elseif problem == "BK1"
+    elseif PROBLEM == "BK1"
         g .= ind == 1 ? 2 .* x : 2 .* (x .- 5)
     end
 
@@ -155,10 +154,10 @@ end
 # ======================================================================
 
 function evalh!(n::Int, x::Vector{T}, H::Matrix{T}, ind::Int) where {T<:AbstractFloat}
-    problem = PROBLEM[]
+    
     H .= zeros(T, n, n)
 
-    if problem == "AP1"
+    if PROBLEM == "AP1"
         if ind == 1
             H[1,1] = 3*(x[1]-1)^2
             H[2,2] = 6*(x[2]-2)^2
@@ -170,10 +169,10 @@ function evalh!(n::Int, x::Vector{T}, H::Matrix{T}, ind::Int) where {T<:Abstract
             H[2,2] = (1/3)*exp(-x[2])
         end
 
-    elseif problem == "AP2"
+    elseif PROBLEM == "AP2"
         H[1,1] = 2
 
-    elseif problem == "AP3"
+    elseif PROBLEM == "AP3"
         if ind == 1
             H[1,1] = 3*(x[1]-1)^2
             H[2,2] = 6*(x[2]-2)^2
@@ -184,7 +183,7 @@ function evalh!(n::Int, x::Vector{T}, H::Matrix{T}, ind::Int) where {T<:Abstract
             H[2,2] = 2
         end
 
-    elseif problem == "AP4"
+    elseif PROBLEM == "AP4"
         if ind == 1
             H[1,1] = 12/9*(x[1]-1)^2
             H[2,2] = 24/9*(x[2]-2)^2
@@ -201,11 +200,11 @@ function evalh!(n::Int, x::Vector{T}, H::Matrix{T}, ind::Int) where {T<:Abstract
             H[3,3] = (1/4)*exp(-x[3])
         end
 
-    elseif problem == "BK1"
+    elseif PROBLEM == "BK1"
         H .= 2.0 * Matrix{T}(I, n, n)
     end
 
     return H
 end
 
-end # module
+#end # module

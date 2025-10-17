@@ -1,5 +1,5 @@
-using .ModTypes: T
-using .ModAlgConst: MACHEPS12, MACHEPS13
+#using .ModTypes: T
+#using .ModAlgConst: MACHEPS12, MACHEPS13
 
 # ============================================================
 # checkderivatives.jl
@@ -18,7 +18,6 @@ function checkdF(n::Int, m::Int,
     Checks the correctness of user-supplied derivative subroutines
     by comparing them with finite-difference approximations.
     """
-
     x = copy(xini)
 
     rng = MersenneTwister(123456)

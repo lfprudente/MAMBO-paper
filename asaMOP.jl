@@ -1,6 +1,6 @@
-using .ModTypes: T
-using .ModAlgConst: MAXOUTITER, MACHEPS12
-using .SafeEval
+#using .ModTypes: T
+#using .ModAlgConst: MAXOUTITER, MACHEPS12
+#using .SafeEval
 
 """
 asaMOP(n, m, x, l, u; scaleF=true, iprint=true, iprintLS=false)
@@ -45,7 +45,6 @@ function asaMOP!(n::Int, m::Int,
     # Inicialize vectors and matrices
     F    = Vector{T}(undef, m)
     g    = Vector{T}(undef, n)
-    gphi = Vector{T}(undef, m)
     tmp  = Vector{T}(undef, m)
     JF   = Matrix{T}(undef, m, n)
 
@@ -57,7 +56,7 @@ function asaMOP!(n::Int, m::Int,
     # ou passar por argumento nas funções. Vamos tratar isso quando chegarmos ao inner.
 
     # Scale problem
-    sF[] = scalefactor(n, m, x, scaleF)  # definido em evals.jl (placeholder por ora)
+    sF = scalefactor(n, m, x, scaleF)
 
     # Print problem information
     if iprint
@@ -66,7 +65,7 @@ function asaMOP!(n::Int, m::Int,
         @printf("\n-------------------------------------------------------------------------------")
         @printf("\nNumber of variables: %6d\nNumber of functions: %6d\n", n, m)
         if scaleF
-            @printf("\nSmallest objective scale factor: %.0e ", minimum(sF[]))
+            @printf("\nSmallest objective scale factor: %.0e ", minimum(sF))
         end
         @printf("\nFloating-point type            : %s\n\n", string(T))
     end
@@ -81,11 +80,11 @@ function asaMOP!(n::Int, m::Int,
 
     # Evaluate the objective function F
     for i in 1:m
-        Fi, infofun = sevalf(n, x, i)  # (Fi, infofun) — definido em evals.jl
+        Fi, flag = sevalf(n, x, i, sF[i])  # (Fi, flag) — definido em evals.jl
         nfev += 1
-        if infofun != 0
+        if flag != 1
             inform = -1
-            return finish!(t0, x, outiter, nfev, ngev, theta, inform, iprint)
+            return finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
         end
         F[i] = Fi
     end    
@@ -102,11 +101,11 @@ function asaMOP!(n::Int, m::Int,
         # Compute Jacobian JF
         
         for i in 1:m
-            g, infofun = sevalg!(n, x, g, i)  # (grad_i(x), infofun) — definido em evals.jl
+            g, flag = sevalg!(n, x, g, i, sF[i])  # (grad_i(x), flag) — definido em evals.jl
             ngev += 1
-            if infofun != 0
+            if flag != 1
                 inform = -1
-                return finish!(t0, x, outiter, nfev, ngev, theta, inform, iprint)
+                return finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
             end
             @views JF[i, :] .= g
         end
@@ -117,7 +116,7 @@ function asaMOP!(n::Int, m::Int,
         vB, _, infoIS = evaldSD(n, m, l, u, x, JF, 1)  # definido em inner.jl (assinatura inclui "1" como no Fortran)
         if infoIS != 0
             inform = -2
-            return finish!(t0, x, outiter, nfev, ngev, theta, inform, iprint)
+            return finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
         end
 
         vBeucn = norm(vB)
@@ -147,12 +146,12 @@ function asaMOP!(n::Int, m::Int,
         # -----------------------------
         if abs(theta) <= epsopt
             inform = 1
-            return finish!(t0, x, outiter, nfev, ngev, theta, inform, iprint)
+            return finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
         end
 
         if outiter >= MAXOUTITER
             inform = 2
-            return finish!(t0, x, outiter, nfev, ngev, theta, inform, iprint)
+            return finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
         end
 
         # -----------------------------
@@ -160,37 +159,29 @@ function asaMOP!(n::Int, m::Int,
         # -----------------------------
         outiter += 1
 
+        # Set the search direction
         d = vB
 
-        # gphi(i) = <∇F_i(x), d>  → JF * d
-        mul!(gphi, JF, d)
-
-        # Line search (Armijo não-monótona)
-        stp0 = 1.0
-        stp, Fplus, nfevLS, infoLS = armijo(evalphi, stp0, m, F, gphi, iprintLS)  # definido em linesearch.jl
+        # Line search using Armijo-type condition
+        stp = 1.0
+        stp, Fplus, nfevLS, infoLS = armijo!(stp, n, m, x, d, F, JF, sF)
         nfev += nfevLS
 
-        if infoLS <= -1
+        if infoLS == -1
             inform = -3
-            return finish!(t0, x, outiter, nfev, ngev, theta, inform, iprint)
+            return finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
         end
 
         # Update x and F
         F .= Fplus
         @. x = x + stp * d
-
-        if iprint
-            @printf("%5d   %8.2E   %9.2E %9.2E    %1d  %1d   %6d  %6d\n",
-                    outiter, abs(theta), F[1], (m>=2 ? F[2] : NaN),
-                    infoLS, infoIS, nfev, ngev)
-        end
     end
 end
 
 # ------------------------------------------------------------
 # Helper
 # ------------------------------------------------------------
-function finish!(t0, x, outiter, nfev, ngev, theta, inform, iprint)
+function finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
     time_spent = time() - t0
     if iprint
         if inform == 1

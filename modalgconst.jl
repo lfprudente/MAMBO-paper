@@ -1,3 +1,4 @@
+#=
 module ModAlgConst
 
 using ..ModTypes: T
@@ -5,7 +6,7 @@ using ..ModTypes: T
 export BIGNUM, MACHEPS, MACHEPS12, MACHEPS13, MACHEPS23,
        GAMMA1, GAMMA2, MULTMU, FTOL, STPMIN, SPGMAX, SPGMIN,
        MAXOUTITER, NU
-
+=#
 # ------------------------------------------------------------
 # Generic constants depending on floating-point type T
 # ------------------------------------------------------------
@@ -29,4 +30,4 @@ const SPGMIN = 1.0e-10
 const MAXOUTITER = 2000
 const NU         = 0.1
 
-end # module
+#end # module
