@@ -1,36 +1,36 @@
-#using .ModTypes: T
-#using .ModAlgConst: MAXOUTITER, MACHEPS12
-#using .SafeEval
+"""
+    SteepestDescent!(n::Int, m::Int, x::Vector{T};
+                     epsopt::T = 5.0 * MACHEPS12,
+                     scaleF::Bool = true,
+                     iprint::Bool = true) where {T<:AbstractFloat}
+
+Main implementation of the Steepest Descent algorithm for multiobjective optimization problems.
+
+# Arguments
+- `n`        : number of variables.
+- `m`        : number of objectives.
+- `x`        : initial point (will be modified in-place).
+- `epsopt`   : stopping tolerance for the optimality condition.
+- `scaleF`   : whether to scale the objectives using `scalefactor`.
+- `iprint`   : whether to print iteration and summary information.
+
+# Returns
+A tuple `(xsol, stats)` where:
+- `xsol`  : final solution vector.
+- `stats` : named tuple with fields `(outiter, time, nfev, ngev, theta, inform)`.
+
+# Notes
+This routine uses:
+- `sevalf`, `sevalg!`: safe evaluation wrappers for objectives and gradients.
+- `evalSD!`: computes the steepest descent direction (and Lagrange multipliers).
+- `armijo!`: performs line search based on Armijo-type conditions.
 
 """
-asaMOP(n, m, x, l, u; scaleF=true, iprint=true, iprintLS=false)
-
-Tradução da subrotina Fortran `asaMOP`. Resolve:
-    min F(x) sujeito a l ≤ x ≤ u
-onde F: ℝⁿ → ℝᵐ, via método de conjunto ativo.
-
-Entradas (posicionais):
-- n::Int, m::Int
-
-Parâmetros nomeados:
-- x::Vector{T}         # ponto inicial (modificado in-place)
-- l::Vector{T}, u::Vector{T}
-- scaleF::Bool, checkder::Bool
-- iprint::Bool, iprintLS::Bool
-
-Saída:
-- x::Vector{T}         # solução (aprox)
-- state::NamedTuple          # (outiter, time, nfev, ngev, theta, inform)
-"""
-
-function asaMOP!(n::Int, m::Int,
-                x::Vector{T},
-                l::Vector{T},
-                u::Vector{T};
+function SteepestDescent!(n::Int, m::Int,
+                x::Vector{T};
                 epsopt::T = 5.0*MACHEPS12,
                 scaleF::Bool = true,
-                iprint::Bool = true,
-                iprintLS::Bool = false) where {T<:AbstractFloat}
+                iprint::Bool = true) where {T<:AbstractFloat}
 
     # -----------------------------
     # Initialization
@@ -39,54 +39,45 @@ function asaMOP!(n::Int, m::Int,
     # Start timing
     t0 = time()
 
-    # Project starting point: x = max(l, min(x, u))
-    @. x = clamp(x, l, u)
+    # Preallocate vectors and matrices
+    F      = Vector{T}(undef, m)
+    g      = Vector{T}(undef, n)
+    dSD    = Vector{T}(undef, n)
+    lambda = Vector{T}(undef, m)
+    tmp    = Vector{T}(undef, m)
+    JF     = Matrix{T}(undef, m, n)
 
-    # Inicialize vectors and matrices
-    F    = Vector{T}(undef, m)
-    g    = Vector{T}(undef, n)
-    tmp  = Vector{T}(undef, m)
-    JF   = Matrix{T}(undef, m, n)
-
-    # Em Fortran:
-    # ninner  => n
-    # xinner  => x
-    # dinner  => d
-    # Em Julia, se você precisar compartilhar com o "inner", pode usar variáveis globais
-    # ou passar por argumento nas funções. Vamos tratar isso quando chegarmos ao inner.
-
-    # Scale problem
+    # Compute scaling factors for the objectives
     sF = scalefactor(n, m, x, scaleF)
-
+    
     # Print problem information
     if iprint
         @printf("\n-------------------------------------------------------------------------------")
         @printf("\n         Steepest descent algorithm for Multiobjective Optimization            ")
         @printf("\n-------------------------------------------------------------------------------")
         @printf("\nNumber of variables: %6d\nNumber of functions: %6d\n", n, m)
+        @printf("\nOptimality tolerance: %7.1E\n", epsopt)
         if scaleF
             @printf("\nSmallest objective scale factor: %.0e ", minimum(sF))
         end
         @printf("\nFloating-point type            : %s\n\n", string(T))
     end
 
-    # Counters
+    # Counters and control variables
     outiter = 0
     nfev    = 0
     ngev    = 0
+    theta  = NaN
+    infoLS = -99
 
-    # Initialize theta
-    theta = NaN
-
-    # Evaluate the objective function F
+    # Evaluate the objective function F at x
     for i in 1:m
-        Fi, flag = sevalf(n, x, i, sF[i])  # (Fi, flag) — definido em evals.jl
+        F[i], flag = sevalf(n, x, i, sF[i])
         nfev += 1
         if flag != 1
             inform = -1
             return finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
         end
-        F[i] = Fi
     end    
 
     # -----------------------------
@@ -98,10 +89,9 @@ function asaMOP!(n::Int, m::Int,
         # Prepare the iteration
         # -----------------------------
         
-        # Compute Jacobian JF
-        
+        # Compute Jacobian JF (gradients of all objectives)
         for i in 1:m
-            g, flag = sevalg!(n, x, g, i, sF[i])  # (grad_i(x), flag) — definido em evals.jl
+            _, flag = sevalg!(n, x, g, i, sF[i])
             ngev += 1
             if flag != 1
                 inform = -1
@@ -109,35 +99,32 @@ function asaMOP!(n::Int, m::Int,
             end
             @views JF[i, :] .= g
         end
-        println(F)
-        println(JF)
         
-        # Compute projected gradient direction and norms
-        vB, _, infoIS = evaldSD(n, m, l, u, x, JF, 1)  # definido em inner.jl (assinatura inclui "1" como no Fortran)
-        if infoIS != 0
+        # Compute steepest descent direction
+        dSD, lambda, infoIS = evalSD!(n, m, dSD, lambda, JF)
+        if infoIS != 1
             inform = -2
             return finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
         end
 
-        vBeucn = norm(vB)
+        dSDeucn = norm(dSD)
 
         # Optimal value of the projected gradient subproblem:
-        # theta = max( JF * vB ) + 0.5 * ||vB||^2
-        mul!(tmp, JF, vB)
-        theta = maximum(tmp) + 0.5 * (vBeucn^2)
+        # theta = max( JF * dSD ) + 0.5 * ||dSD||^2
+        mul!(tmp, JF, dSD)
+        theta = maximum(tmp) + 0.5 * (dSDeucn^2)
 
-        # Print information
+        # Print iteration information
         if iprint
+            if outiter % 10 == 0
+                @printf("\n  It      Optimal   ObjFun1   ObjFun2    LS  IS   #evalf  #evalg\n")
+            end
             if outiter == 0
-                @printf("\nOptimality tolerance: %10.3E\n", epsopt)
-                @printf("    out    Optimal      ObjFun1   ObjFun2    LS  IS   #evalf  #evalg \n")
-                @printf("%5d   %8.2E   %9.2E %9.2E    -  %1d   %6d  %6d\n",
-                        outiter, abs(theta), F[1], (m>=2 ? F[2] : NaN), infoIS, nfev, ngev)
+                @printf("%4d     %8.2E %9.2E %9.2E     -   %1d   %6d  %6d\n",
+                    outiter, abs(theta), F[1], (m>=2 ? F[2] : NaN), infoIS, nfev, ngev)
             else
-                if outiter % 10 == 0
-                    @printf("    out    Optimal      ObjFun1   ObjFun2    LS  IS   #evalf  #evalg\n")
-                end
-                # infoLS será impresso após a busca linear
+                @printf("%4d     %8.2E %9.2E %9.2E     %1d   %1d   %6d  %6d\n",
+                    outiter, abs(theta), F[1], (m>=2 ? F[2] : NaN), infoLS, infoIS, nfev, ngev)
             end
         end
 
@@ -160,10 +147,10 @@ function asaMOP!(n::Int, m::Int,
         outiter += 1
 
         # Set the search direction
-        d = vB
+        d = dSD
 
         # Line search using Armijo-type condition
-        stp = 1.0
+        stp = ONE
         stp, Fplus, nfevLS, infoLS = armijo!(stp, n, m, x, d, F, JF, sF)
         nfev += nfevLS
 
@@ -185,19 +172,19 @@ function finish(t0, x, outiter, nfev, ngev, theta, inform, iprint)
     time_spent = time() - t0
     if iprint
         if inform == 1
-            @printf("\nFlag of MOPsolver: solution was found\n")
+            @printf("\nFlag of MOPsolver: Solution was found\n")
         elseif inform == 2
-            @printf("\nFlag of MOPsolver: maximum of iterations reached\n")
+            @printf("\nFlag of MOPsolver: Maximum of iterations reached\n")
         elseif inform == -1
-            @printf("\nFlag of MOPsolver: an error occurred during the evaluation of a function\n")
+            @printf("\nFlag of MOPsolver: An error occurred during the evaluation of a function\n")
         elseif inform == -2
-            @printf("\nFlag of MOPsolver: an error occurred during the subproblem solution\n")
+            @printf("\nFlag of MOPsolver: An error occurred during the subproblem solution\n")
         elseif inform == -3
-            @printf("\nFlag of MOPsolver: an error occurred during the linesearch\n")
+            @printf("\nFlag of MOPsolver: An error occurred during the linesearch\n")
         else
-            @printf("\nFlag of MOPsolver: unknown termination code (%d)\n", inform)
+            @printf("\nFlag of MOPsolver: Unknown termination code (%d)\n", inform)
         end
-        @printf("Number of functions evaluations:        %6d\n", nfev)
+        @printf("\nNumber of functions evaluations:        %6d\n", nfev)
         @printf("Number of derivatives evaluations:      %6d\n\n", ngev)
         @printf("Total CPU time in seconds: %8.2f\n", time_spent)
     end

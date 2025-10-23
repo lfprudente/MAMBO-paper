@@ -1,35 +1,39 @@
-#using .ModTypes: T
-#using .ModAlgConst: MACHEPS12, MACHEPS13
 
-# ============================================================
-# checkderivatives.jl
-# ============================================================
+"""
+    checkdF(n::Int, m::Int, xini::Vector{T}, l::Vector{T}, u::Vector{T}) where {T<:AbstractFloat}
 
-# ------------------------------------------------------------
-# Main routine: checks user-supplied derivatives
-# ------------------------------------------------------------
-function checkdF(n::Int, m::Int, 
-                 xini::Vector{T},
-                 l::Vector{T}, 
-                 u::Vector{T}) where {T<:AbstractFloat}
-    """
-    checkdF(n, m, xini, l, u)
+Main routine to check user-supplied derivatives.
 
-    Checks the correctness of user-supplied derivative subroutines
-    by comparing them with finite-difference approximations.
-    """
+# Description
+Compares the user-provided gradient and Hessian routines (`evalg!`, `evalh!`)
+with finite-difference approximations to validate correctness.
+
+Perturbs the initial point `xini` slightly within the bounds `[l, u]`,
+then asks interactively whether to check each gradient and Hessian.
+
+# Arguments
+- `n`, `m`  : number of variables and objectives
+- `xini`    : initial point
+- `l`, `u`  : lower and upper bounds
+
+# Notes
+This function is interactive: it prompts the user before each check.
+Use only for debugging/validation.
+"""
+function checkdF(n::Int, m::Int, xini::Vector{T}, l::Vector{T}, u::Vector{T}) where {T<:AbstractFloat}
     x = copy(xini)
-
     rng = MersenneTwister(123456)
 
-    # Create a perturbed version of xini
+    # ------------------------------------------------------------
+    # Perturb xini slightly within bounds
+    # ------------------------------------------------------------
     for i in 1:n
         if l[i] < xini[i] < u[i]
-            x[i] = xini[i] + MACHEPS12 * (2.0 * rand(rng,T) - 1.0) * max(1.0, abs(xini[i]))
+            x[i] = xini[i] + MACHEPS12 * (TWO * rand(rng,T) - ONE) * max(ONE, abs(xini[i]))
         elseif xini[i] == l[i]
-            x[i] = xini[i] + MACHEPS12 * rand(rng,T) * max(1.0, abs(xini[i]))
+            x[i] = xini[i] + MACHEPS12 * rand(rng,T) * max(ONE, abs(xini[i]))
         else
-            x[i] = xini[i] - MACHEPS12 * rand(rng,T) * max(1.0, abs(xini[i]))
+            x[i] = xini[i] - MACHEPS12 * rand(rng,T) * max(ONE, abs(xini[i]))
         end
         x[i] = clamp(x[i], l[i], u[i])
     end
@@ -39,9 +43,9 @@ function checkdF(n::Int, m::Int,
         @printf("x(%6d) = %15.8E\n", i, x[i])
     end
 
-    # -------------------------------
-    # Check gradients
-    # -------------------------------
+    # ------------------------------------------------------------
+    # Check gradients interactively
+    # ------------------------------------------------------------
     for i in 1:m
         @printf("\nCheck gradient of function %5d?\n", i)
         @printf("Type Y(es), A(bort checking) or S(kip): ")
@@ -58,9 +62,9 @@ function checkdF(n::Int, m::Int,
         end
     end
 
-    # -------------------------------
-    # Check Hessians
-    # -------------------------------
+    # ------------------------------------------------------------
+    # Check Hessians interactively
+    # ------------------------------------------------------------
     for i in 1:m
         @printf("\nCheck Hessian of function %5d?\n", i)
         @printf("Type Y(es), A(bort checking) or S(kip): ")
@@ -80,25 +84,31 @@ end
 
 
 # ------------------------------------------------------------
-# Checks gradient via finite differences
+# checkg — Compare gradient with finite differences
 # ------------------------------------------------------------
+"""
+    checkg(n::Int, x::Vector{T}, ind::Int)
+
+Check the user-supplied gradient ∇fᵢ(x) against a central finite-difference approximation.
+Uses two step sizes for robustness.
+"""
 function checkg(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
     @printf("Index             evalg     Central diff (two steps)     Absolute error\n")
 
     g = Vector{T}(undef, n)
     evalg!(n, x, g, ind)
 
-    maxerr = 0.0
+    maxerr = ZERO
     for i in 1:n
         tmp = x[i]
 
         # First finite-difference step
-        step1 = MACHEPS13 * max(abs(tmp), 1.0)
+        step1 = MACHEPS13 * max(abs(tmp), ONE)
         x[i] = tmp + step1
         fplus = evalf(n, x, ind)
         x[i] = tmp - step1
         fminus = evalf(n, x, ind)
-        gdiff1 = (fplus - fminus) / (2.0 * step1)
+        gdiff1 = (fplus - fminus) / (TWO * step1)
 
         # Second finite-difference step
         step2 = MACHEPS13 * max(abs(tmp), 1.0e-3)
@@ -106,7 +116,7 @@ function checkg(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
         fplus = evalf(n, x, ind)
         x[i] = tmp - step2
         fminus = evalf(n, x, ind)
-        gdiff2 = (fplus - fminus) / (2.0 * step2)
+        gdiff2 = (fplus - fminus) / (TWO * step2)
         x[i] = tmp
 
         tmp_err = min(abs(g[i] - gdiff1), abs(g[i] - gdiff2))
@@ -119,8 +129,14 @@ end
 
 
 # ------------------------------------------------------------
-# Checks Hessian via finite differences of gradients
+# checkh — Compare Hessian with finite differences of gradients
 # ------------------------------------------------------------
+"""
+    checkh(n::Int, x::Vector{T}, ind::Int)
+
+Check the user-supplied Hessian ∇²fᵢ(x) against finite-difference
+approximations of the gradient. Two step sizes are used for improved accuracy.
+"""
 function checkh(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
     @printf("\nHessian matrix of the objective function, column by column.")
 
@@ -133,14 +149,14 @@ function checkh(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
     H = Matrix{T}(undef, n, n)
     evalh!(n, x, H, ind)
 
-    maxcoe = zeros(n)
-    maxerr = 0.0
+    maxcoe = zeros(T, n)
+    maxerr = ZERO
 
     for j in 1:n
         tmp = x[j]
 
-        # Finite-difference steps
-        step1 = MACHEPS12 * max(abs(tmp), 1.0)
+        # Finite-difference steps for Hessian column j
+        step1 = MACHEPS12 * max(abs(tmp), ONE)
         x[j] = tmp + step1
         evalg!(n, x, gplus1, ind)
 
@@ -158,9 +174,11 @@ function checkh(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
             hdiff2 = (gplus2[i] - g[i]) / step2
             tmp_err = min(abs(elem - hdiff1), abs(elem - hdiff2))
 
-            if elem != 0.0 || hdiff1 != 0.0 || hdiff2 != 0.0
-                nullcol = false
-                @printf("Index             evalh     Incr. Quoc. (two steps)     Absolute error\n")
+            if elem != ZERO || hdiff1 != ZERO || hdiff2 != ZERO
+                if nullcol
+                    nullcol = false
+                    @printf("Index             evalh     Incr. Quoc. (two steps)     Absolute error\n")
+                end
                 @printf("%5d   %15.8E   %15.8E   %15.8E   %15.8E\n",
                         i, elem, hdiff1, hdiff2, tmp_err)
             end
