@@ -80,71 +80,69 @@ NOTES
       d = -JF' * λ          (unconstrained case)
       d = P_{B-x}(-JF' * λ) (box-constrained case)
 """
-function evalPG!(d::AbstractVector{T}, lambda::Vector{T}, d_unc::AbstractVector{T}, lambda_unc::Vector{T},
-    n::Int, m::Int , x::Vector{T}, JF::Matrix{T}, l::Vector{T}, u:: Vector{T}) where {T<:AbstractFloat}
+function evalSD!(n::Int, m::Int, JF::Matrix{T}, d::Vector{T}, lambda::Vector{T}; 
+    boxConstrained::Bool=false, x::Vector{T}=zeros(T, n), l::Vector{T}=fill(-Inf, n), u:: Vector{T}=fill(Inf, n)) where {T<:AbstractFloat}
 
     # ------------------------------------------------------------
     # Unconstrained case: Solve the Dual subproblem
     # ------------------------------------------------------------
-    
-    inform = evalSD!(d_unc, lambda_unc, m, JF)
-    if inform != 1
-        return inform
-    end
+    d, lambda, inform = evalSD_unc!(m::Int, JF, d, lambda)
 
-    xplusd = x .+ d_unc
-
-    if all((l .<= xplusd) .& (xplusd .<= u)) 
-        inform  = 1
-        d      .= d_unc
-        lambda .= lambda_unc
-        return inform
-    end
-    
-    idx = findall(lambda_unc .> MACHEPS12)
-
-    dtrial   = clamp.(xplusd, l, u) .- x
-    JFdtrial = JF * dtrial
-    Dxdtrial = maximum(JFdtrial)
-    idx_max  = findall(JFdtrial .>= Dxdtrial - MACHEPS12 * max(ONE, abs(Dxdtrial)))
-
-    if Set(idx) == Set(idx_max)
-        inform  = 1
-        d      .= dtrial
-        lambda .= lambda_unc
-        return inform
-    end
-
-    # ------------------------------------------------------------
-    # Box constrained case: Solve the Primal subproblem
-    # ------------------------------------------------------------
-
-    Q = zeros(T, 1+n, 1+n)
-    Q[2:end, 2:end] .= I(n)
-
-    q = zeros(T, 1+n); q[1] = ONE
-
-    A = hcat(-ones(T, m, 1), JF)
-    lcon, ucon = fill(-Inf, m), zeros(T, m)
-
-    lb, ub = vcat(-Inf, l .- x), vcat( Inf, u .- x)
-
-    qp = QuadraticModel(q, tril(Q), A=A, lcon=lcon, ucon=ucon, lvar=lb, uvar=ub, c0 = ZERO)
-    stats   = ripqp(qp, display=false)
-    d      .= stats.solution[2:n+1]
-    lambda .= stats.multipliers
-
-    if stats.status == :first_order || stats.status == :optimal
-        inform = 1
+    if !boxConstrained
+        return d, lambda, inform
     else
-        inform = -1
-    end
 
-    return inform
+        xplusd = x .+ d
+
+        if all((l .<= xplusd) .& (xplusd .<= u)) 
+            inform = 1
+            return d, lambda, inform
+        end
+        
+        idx = findall(lambda .> MACHEPS12)
+
+        dtrial   = clamp.(xplusd, l, u) .- x
+        JFdtrial = JF * dtrial
+        Dxdtrial = maximum(JFdtrial)
+        idx_max  = findall(JFdtrial .>= Dxdtrial - MACHEPS12 * max(ONE, abs(Dxdtrial)))
+
+        if Set(idx) == Set(idx_max)
+            d .= dtrial
+            inform = 1
+            return d, lambda, inform
+        end
+
+        # ------------------------------------------------------------
+        # Box constrained case: Solve the Primal subproblem
+        # ------------------------------------------------------------
+
+        Q = zeros(T, 1+n, 1+n)
+        Q[2:end, 2:end] .= I(n)
+
+        q = zeros(T, 1+n); q[1] = ONE
+
+        A = hcat(-ones(T, m, 1), JF)
+        lcon, ucon = fill(-Inf, m), zeros(T, m)
+
+        lb, ub = vcat(-Inf, l .- x), vcat( Inf, u .- x)
+
+        qp = QuadraticModel(q, tril(Q), A=A, lcon=lcon, ucon=ucon, lvar=lb, uvar=ub, c0 = ZERO)
+        stats   = ripqp(qp, display=false)
+        d      .= stats.solution[2:n+1]
+        lambda .= stats.multipliers
+
+        if stats.status == :first_order || stats.status == :optimal
+            inform = 1
+        else
+            inform = -1
+        end
+
+        return d, lambda, inform
+    end
 end
 
 
-function evalSD!(d::AbstractVector{T}, lambda::Vector{T}, m::Int, JF::Matrix{T}) where {T<:AbstractFloat}
+function evalSD_unc!(m::Int, JF::Matrix{T}, d::Vector{T}, lambda::Vector{T}) where {T<:AbstractFloat}
     # ------------------------------------------------------------
     # Case m = 2 (explicit analytical solution)
     # ------------------------------------------------------------
@@ -159,7 +157,7 @@ function evalSD!(d::AbstractVector{T}, lambda::Vector{T}, m::Int, JF::Matrix{T})
         if b <= MACHEPS12
             lambda[1], lambda[2] = ONE, ZERO
             d .= - g1
-            return inform
+            return d, lambda, inform
         end
 
         # Squared norms of the two gradients
@@ -180,7 +178,7 @@ function evalSD!(d::AbstractVector{T}, lambda::Vector{T}, m::Int, JF::Matrix{T})
                 lambda[1], lambda[2] = ZERO, ONE
                 d .= - g2
             end
-            return inform
+            return d, lambda, inform
         end
 
         # Evaluate function value at lambda_trial
@@ -200,7 +198,7 @@ function evalSD!(d::AbstractVector{T}, lambda::Vector{T}, m::Int, JF::Matrix{T})
             d .= - (lambda[1] * g1 .+ lambda[2] * g2)
         end
 
-        return inform
+        return d, lambda, inform
     end
 
     # ------------------------------------------------------------
@@ -226,5 +224,5 @@ function evalSD!(d::AbstractVector{T}, lambda::Vector{T}, m::Int, JF::Matrix{T})
 
     # Compute direction d = -JF' * λ
     mul!(d, JF', -lambda)
-    return inform
+    return d, lambda, inform
 end

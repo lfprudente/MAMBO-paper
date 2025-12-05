@@ -18,12 +18,9 @@ If `scaleF` is `false`, all scaling factors are set to 1.
 # Returns
 - `sF::Vector{T}` : vector of scaling factors (length `m`)
 """
-function scalefactor(n::Int, m::Int, x::Vector{T}, scaleF::Bool)
+function scalefactor!(n::Int, m::Int, x::Vector{T}, scaleF::Bool, sF::Vector{T})  where {T<:AbstractFloat}
     # Allocate local gradient vector
-    g  = Vector{T}(undef, n)
-
-    # Allocate scaling factors
-    sF = Vector{T}(undef, m)
+    g = similar(x)
 
     if scaleF
         for ind in 1:m
@@ -33,5 +30,4 @@ function scalefactor(n::Int, m::Int, x::Vector{T}, scaleF::Bool)
     else
         fill!(sF, ONE)
     end
-    return sF
 end

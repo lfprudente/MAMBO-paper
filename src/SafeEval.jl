@@ -26,7 +26,7 @@ function sevalf(n::Int, x::Vector{T}, ind::Int, sf::T) where {T<:AbstractFloat}
     f = evalf(n, x, ind)
     if !is_a_number(f)
         @printf("\nWARNING: Non-finite objective value (NaN or Inf). Function index: %4d\n", ind)
-        return sf * f, -1
+        return BIGNUM, -1
     end
     return sf * f, 1
 end
@@ -49,14 +49,14 @@ function sevalg!(n::Int, x::Vector{T}, g::Vector{T}, ind::Int, sf::T) where {T<:
 
     @inbounds for i in 1:n
         gi = g[i]
-        if !is_a_number(g[i])
+        if !is_a_number(gi)
             flag = -1
             @printf("\nWARNING: Gradient element may be +Inf, -Inf or NaN. Function: %4d  Coordinate: %5d\n", ind, i)
         end
         g[i] = sf * gi
     end
 
-    return g, flag
+    return flag
 end
 
 # =============================================================
@@ -85,17 +85,5 @@ function sevalh!(n::Int, x::Vector{T}, H::Matrix{T}, ind::Int, sf::T) where {T<:
         end
     end
 
-    return H, flag
-end
-
-# =============================================================
-# evalphi — safely evaluate 1D function φ(stp)
-# =============================================================
-"""
-    evalphi(stp::T, ind::Int, n::Int, x::Vector{T}, d::Vector{T}, sf::T) -> (phi::T, infofun::Int)
-
-Evaluates φ(stp) = fᵢ(x + stp * d) safely using `sevalf`.
-"""
-function evalphi(stp::T, ind::Int, n::Int, x::Vector{T}, d::Vector{T}, sf::T) where {T<:AbstractFloat}
-    return sevalf(n, x .+ stp .* d, ind, sf)
+    return flag
 end

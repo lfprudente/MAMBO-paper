@@ -1,12 +1,17 @@
 using Pkg
 Pkg.activate(@__DIR__)
-include(joinpath(@__DIR__, "src", "SDProject.jl"))
-using .SDProject
 using Printf
 
-# Run typing: julia --project=. run_main.jl
+include(joinpath(@__DIR__, "src", "ASAProject.jl"))
+using .ASAProject
 
 function main()
+    # using ASAProject
+
+
+    # Run typing: julia --project=. run_main.jl
+
+
 
     #=
     problems = [
@@ -33,10 +38,11 @@ function main()
 
     # Select PROBLEM and SEED
     PROBLEM = "FDS"
-    SEED   = 2025
+    #PROBLEM = "Far1"
+    SEED   = 2026
 
     # Define the global variable PROBLEM
-    SDProject.PROBLEM = PROBLEM
+    ASAProject.PROBLEM = PROBLEM
 
     # Initialize
     n, m, x0, l, u, strconvex, scaleF, checkder = inip(PROBLEM,SEED)
@@ -48,7 +54,14 @@ function main()
 
     # Call the SD algorithm
     x = copy(x0)
-    xsol, stats =  SteepestDescent!(n, m, x; epsopt=1.0e-6)
+    xsol, stats =  asaMOP!(n, m, x, l, u; epsopt=1.0e-6)
+
+    x = copy(x0)
+    xsol, stats =  asaMOP!(n, m, x, l, u; epsopt=1.0e-6)
+
+    x = copy(x0)
+    xsol, stats =  asaMOP!(n, m, x, l, u; epsopt=1.0e-6)
+
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

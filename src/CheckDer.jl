@@ -82,7 +82,6 @@ function checkdF(n::Int, m::Int, xini::Vector{T}, l::Vector{T}, u::Vector{T}) wh
     end
 end
 
-
 # ------------------------------------------------------------
 # checkg — Compare gradient with finite differences
 # ------------------------------------------------------------
@@ -126,7 +125,6 @@ function checkg(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
     end
     @printf("Maximum absolute error = %15.8E\n", maxerr)
 end
-
 
 # ------------------------------------------------------------
 # checkh — Compare Hessian with finite differences of gradients

@@ -1,4 +1,4 @@
-module SDProject
+module ASAProject
 
 # ----------------------------------------------------------------------
 # Dependencies
@@ -25,15 +25,19 @@ PROBLEM = ""
 include("AlgConst.jl")        # Algorithmic constants and default parameters
 include("MyProblem.jl")       # Problem definition and initialization routines
 include("CheckDer.jl")        # Derivative and consistency checks
+include("initialization.jl") 
 include("ScaleFactor.jl")     # Scaling utilities for the objectives
 include("SafeEval.jl")        # Safe evaluation wrappers (handle NaNs/infs)
-include("evalSD.jl")          # Evaluation of steepest descent direction
+include("evalSD.jl")          # Evaluation the (projected) steepest descent direction
+include("truncatedCG.jl")
+include("stepmax.jl")
+include("extrapolation.jl") 
 include("armijo.jl")          # Armijo line search implementation
-include("SteepestDescent.jl") # Main steepest descent algorithm
+include("asaMOP.jl") # Main steepest descent algorithm
 
 # ----------------------------------------------------------------------
 # Export public functions
 # ----------------------------------------------------------------------
-export SteepestDescent!, inip, checkdF
+export asaMOP!, inip, checkdF
 
-end # module SDProject
+end # module ASAProject

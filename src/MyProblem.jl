@@ -92,7 +92,7 @@ function inip(PROBLEM::String,SEED::Int)
 
     elseif PROBLEM == "FDS"
         # Newton’s Method for Multiobjective Optimization
-        n, m = 5, 3
+        n, m = 1000, 3
         l = fill(T(-2.0), n)
         u = fill(T( 2.0), n)
         x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
@@ -1835,8 +1835,6 @@ function evalg!(n::Int, x::Vector{T}, g::Vector{T}, ind::Int) where {T<:Abstract
     else
         error("Unknown PROBLEM: $PROBLEM")
     end
-
-    return g
 end
 
 # ======================================================================
@@ -3206,6 +3204,4 @@ function evalh!(n::Int, x::Vector{T}, H::Matrix{T}, ind::Int) where {T<:Abstract
     else
         error("Unknown PROBLEM: $PROBLEM")
     end
-
-    return H
 end
