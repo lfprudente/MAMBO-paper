@@ -1,24 +1,47 @@
-
 """
-    checkdF(n::Int, m::Int, xini::Vector{T}, l::Vector{T}, u::Vector{T}) where {T<:AbstractFloat}
+--------------------------------------------------------------------------------
+checkdF — Interactive verification of first- and second-order derivatives
+--------------------------------------------------------------------------------
 
-Main routine to check user-supplied derivatives.
+Main routine to validate user-supplied first- and second-order derivatives
+(`evalg!` and `evalh!`) against finite-difference approximations.
 
-# Description
-Compares the user-provided gradient and Hessian routines (`evalg!`, `evalh!`)
-with finite-difference approximations to validate correctness.
+The routine perturbs the initial point `xini` slightly inside the bounds
+`[l, u]`, then interactively asks whether to test:
 
-Perturbs the initial point `xini` slightly within the bounds `[l, u]`,
-then asks interactively whether to check each gradient and Hessian.
+  - each gradient ∇fᵢ(x),
+  - each Hessian ∇²fᵢ(x).
 
-# Arguments
-- `n`, `m`  : number of variables and objectives
-- `xini`    : initial point
-- `l`, `u`  : lower and upper bounds
+This function is intended strictly for debugging and validation of
+user-provided derivatives.
 
-# Notes
-This function is interactive: it prompts the user before each check.
-Use only for debugging/validation.
+--------------------------------------------------------------------------------
+Function signature:
+
+    checkdF(n, m, xini, l, u)
+
+--------------------------------------------------------------------------------
+Read-only Input:
+
+    n, m : Number of variables and objectives
+    xini : Initial point
+    l, u : Lower and upper bounds
+
+--------------------------------------------------------------------------------
+Behavior:
+
+    - Internally creates a perturbed copy of xini
+    - Prompts the user before checking each gradient and Hessian
+    - Calls `checkg` and `checkh` accordingly
+
+--------------------------------------------------------------------------------
+Notes:
+
+    • This routine is interactive
+    • Should NOT be used inside production runs
+    • Intended for development, debugging, and benchmarking
+
+--------------------------------------------------------------------------------
 """
 function checkdF(n::Int, m::Int, xini::Vector{T}, l::Vector{T}, u::Vector{T}) where {T<:AbstractFloat}
     x = copy(xini)
@@ -86,16 +109,46 @@ end
 # checkg — Compare gradient with finite differences
 # ------------------------------------------------------------
 """
-    checkg(n::Int, x::Vector{T}, ind::Int)
+--------------------------------------------------------------------------------
+checkg — Finite-difference verification of a single gradient
+--------------------------------------------------------------------------------
 
-Check the user-supplied gradient ∇fᵢ(x) against a central finite-difference approximation.
-Uses two step sizes for robustness.
+Compares the user-supplied gradient ∇fᵢ(x), obtained via `evalg!`,
+against a central finite-difference approximation using two step sizes
+for improved numerical robustness.
+
+The routine prints:
+
+  • exact gradient value,
+  • two finite-difference estimates,
+  • absolute error.
+
+--------------------------------------------------------------------------------
+Function signature:
+
+    checkg(n, x, ind)
+
+--------------------------------------------------------------------------------
+Read-only Input:
+
+    n   : Number of variables
+    x   : Current evaluation point
+    ind : Index of the objective function fᵢ
+
+--------------------------------------------------------------------------------
+Notes:
+
+    • This routine is for debugging purposes
+    • Modifies x temporarily but restores it internally
+    • Outputs diagnostic information to the terminal
+
+--------------------------------------------------------------------------------
 """
 function checkg(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
     @printf("Index             evalg     Central diff (two steps)     Absolute error\n")
 
     g = Vector{T}(undef, n)
-    evalg!(n, x, g, ind)
+    evalg!(g, ind, x, n)
 
     maxerr = ZERO
     for i in 1:n
@@ -104,17 +157,17 @@ function checkg(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
         # First finite-difference step
         step1 = MACHEPS13 * max(abs(tmp), ONE)
         x[i] = tmp + step1
-        fplus = evalf(n, x, ind)
+        fplus = evalf(ind, x, n)
         x[i] = tmp - step1
-        fminus = evalf(n, x, ind)
+        fminus = evalf(ind, x, n)
         gdiff1 = (fplus - fminus) / (TWO * step1)
 
         # Second finite-difference step
         step2 = MACHEPS13 * max(abs(tmp), 1.0e-3)
         x[i] = tmp + step2
-        fplus = evalf(n, x, ind)
+        fplus = evalf(ind, x, n)
         x[i] = tmp - step2
-        fminus = evalf(n, x, ind)
+        fminus = evalf(ind, x, n)
         gdiff2 = (fplus - fminus) / (TWO * step2)
         x[i] = tmp
 
@@ -130,10 +183,41 @@ end
 # checkh — Compare Hessian with finite differences of gradients
 # ------------------------------------------------------------
 """
-    checkh(n::Int, x::Vector{T}, ind::Int)
+--------------------------------------------------------------------------------
+checkh — Finite-difference verification of a single Hessian matrix
+--------------------------------------------------------------------------------
 
-Check the user-supplied Hessian ∇²fᵢ(x) against finite-difference
-approximations of the gradient. Two step sizes are used for improved accuracy.
+Compares the user-supplied Hessian ∇²fᵢ(x), obtained via `evalh!`,
+against finite-difference approximations of the gradient ∇fᵢ(x).
+
+Each column of the Hessian is checked independently using two step sizes.
+The routine prints:
+
+  • exact Hessian values,
+  • two finite-difference estimates,
+  • absolute error per entry,
+  • maximum error per column and overall.
+
+--------------------------------------------------------------------------------
+Function signature:
+
+    checkh(n, x, ind)
+
+--------------------------------------------------------------------------------
+Read-only Input:
+
+    n   : Number of variables
+    x   : Current evaluation point
+    ind : Index of the objective function fᵢ
+
+--------------------------------------------------------------------------------
+Notes:
+
+    • This routine is for debugging purposes
+    • Modifies x temporarily but restores it internally
+    • Outputs diagnostic information to the terminal
+
+--------------------------------------------------------------------------------
 """
 function checkh(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
     @printf("\nHessian matrix of the objective function, column by column.")
@@ -142,10 +226,10 @@ function checkh(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
     gplus1 = similar(g)
     gplus2 = similar(g)
 
-    evalg!(n, x, g, ind)
+    evalg!(g, ind, x, n)
 
     H = Matrix{T}(undef, n, n)
-    evalh!(n, x, H, ind)
+    evalh!(H, ind, x, n)
 
     maxcoe = zeros(T, n)
     maxerr = ZERO
@@ -156,11 +240,11 @@ function checkh(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
         # Finite-difference steps for Hessian column j
         step1 = MACHEPS12 * max(abs(tmp), ONE)
         x[j] = tmp + step1
-        evalg!(n, x, gplus1, ind)
+        evalg!(gplus1, ind, x, n)
 
         step2 = MACHEPS12 * max(abs(tmp), 1.0e-3)
         x[j] = tmp + step2
-        evalg!(n, x, gplus2, ind)
+        evalg!(gplus2, ind, x, n)
 
         x[j] = tmp
         @printf("\nColumn: %6d\n", j)

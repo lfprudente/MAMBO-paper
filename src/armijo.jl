@@ -1,31 +1,61 @@
 """
-    armijo(stp::T, n::Int, m::Int, x::Vector{T}, d::Vector{T},
-             F::Vector{T}, Jf::Matrix{T}, sF::Vector{T}) -> (stp::T, Fplus::Vector{T}, nfev::Int, info::Int)
+--------------------------------------------------------------------------------
+armijo! — Armijo Backtracking Line Search for Multiobjective Optimization
+--------------------------------------------------------------------------------
 
-Perform an Armijo-type backtracking line search for multiobjective optimization.
+Performs an Armijo-type backtracking line search along a given search direction
+for multiobjective optimization problems. All objectives are tested against
+their individual Armijo sufficient decrease conditions.
 
-# Arguments
-- `stp` : initial step length (typically 1.0).
-- `n`, `m` : number of variables and objectives.
-- `x` : current iterate.
-- `d` : search direction.
-- `F` : current objective function values.
-- `Jf` : Jacobian of all objectives at `x`.
-- `sF` : scaling factors for each objective.
+The trial point is updated as:
 
-# Returns
-A tuple `(stp, Fplus, nfev, info)` where:
-- `stp`   : Fpinal step size satisFying Armijo condition.
-- `Fplus`  : vector of function values at `x + stp * d`.
-- `nfev`  : number of function evaluations.
-- `info`  : termination code:
-    - `1`: success (Armijo satisFpied)
-    - `2`: minimum step size reached
-    - `-1`: not a descent direction
+    x⁺ = x + stp · d
+
+and the condition checked is:
+
+    fᵢ(x⁺) ≤ fᵢ(x) + FTOL · stp · max_i ⟨∇fᵢ(x), d⟩   for all i = 1,…,m
+
+--------------------------------------------------------------------------------
+Function signature:
+
+    armijo!(xplus, Fplus, n, m, stp, x, F, d, JFd, sF)
+
+--------------------------------------------------------------------------------
+In-place Input / Output:
+
+    xplus : Trial point x + stp·d  (overwritten during the line search)
+    Fplus : Objective values at xplus (overwritten)
+    
+--------------------------------------------------------------------------------
+Read-only Input:
+
+    n, m : Number of variables and objective functions
+    stp  : Initial trial step size
+    x    : Current iterate
+    F    : Objective function values at x
+    d    : Search direction
+    JFd  : Directional derivatives JF*d
+    sF   : Scaling factors of the objectives
+
+--------------------------------------------------------------------------------
+Output (returned values):
+
+    (nfev, info)
+
+    nfev : Number of objective function evaluations during the line search
+    info : Termination flag
+
+        1  : Success (Armijo condition satisfied)
+        2  : Step size reduced to STPMIN
+       -1  : Search direction is not a descent direction
+       -2  : Failure during function evaluation
+
+--------------------------------------------------------------------------------
 """
 function armijo!(xplus::Vector{T}, Fplus::Vector{T},
                 n::Int, m::Int, stp::T,
                 x::Vector{T}, F::Vector{T}, d::Vector{T}, JFd::Vector{T}, 
+                l::Vector{T}, u::Vector{T},
                 sF::Vector{T}) where {T<:AbstractFloat}
 
     # ------------------------------------------------------------
@@ -54,7 +84,7 @@ function armijo!(xplus::Vector{T}, Fplus::Vector{T},
 
     ftest = FTOL * maxJFd
 
-    @. xplus = x + stp * d
+    @. xplus = clamp(x + stp * d, l, u)
 
     # ------------------------------------------------------------
     # Main backtracking loop
@@ -68,7 +98,7 @@ function armijo!(xplus::Vector{T}, Fplus::Vector{T},
                 continue # skip the previously tested index
             end
 
-            Fpi, flag = sevalf(n, xplus, i, sF[i])
+            Fpi, flag = sevalf(i, xplus, n, sF[i])
             if flag != 1
                 return nfev, -2
             end
@@ -93,7 +123,7 @@ function armijo!(xplus::Vector{T}, Fplus::Vector{T},
         end
         
         if stp == STPMIN
-            @printf("\nWARNING: stp = STPMIN. Armijo condition not satisFpied.\n")
+            @printf("\nWARNING: stp = STPMIN. Armijo condition not satisfied.\n")
             return nfev, 2 # reached lower bound
         end
 
@@ -124,7 +154,7 @@ function armijo!(xplus::Vector{T}, Fplus::Vector{T},
 
             @. xplus = x + stp * d
 
-            Fpi, flag = sevalf(n, xplus, ind, sF[ind])
+            Fpi, flag = sevalf(ind, xplus, n, sF[ind])
             if flag != 1
                 return nfev, -2
             end

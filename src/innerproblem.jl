@@ -1,84 +1,50 @@
 """
-    evalSD!(n::Int, m::Int, JF::Matrix{T}, d::Vector{T}, λ::Vector{T};
-             boxConstrained::Bool=false,
-             x::Vector{T}=zeros(T, n),
-             l::Vector{T}=fill(-Inf, n),
-             u::Vector{T}=fill(Inf, n))
-        -> (d::Vector{T}, λ::Vector{T}, info::Int)
+--------------------------------------------------------------------------------
+**evalPG! — Projected Gradient Direction for Box-Constrained Subproblem**
 
-Compute the (projected) steepest descent direction for a multiobjective optimization problem.
+Computes the projected steepest descent direction associated with the following
+subproblem:
 
-This routine computes the steepest descent direction `d` and the associated
-Lagrange multipliers `λ` at a given point `x`, based on the Jacobian matrix `JF`,
-whose rows are the objective gradients (∇fᵢ(x))ᵀ.
+    min_d   max_i ⟨∇f_i(x), d⟩ + 0.5‖d‖²
+    s.t.    l ≤ x + d ≤ u
 
-Depending on the value of `boxConstrained`, it solves one of two subproblems:
+The routine follows a two-stage strategy:
 
-------------------------------------------------------------------------------
-UNCONSTRAINED CASE  (boxConstrained = false)
-------------------------------------------------------------------------------
+  1) **Unconstrained dual subproblem** (via `evalSD!`)
+     - If the unconstrained step is feasible, it is accepted.
 
-Solve the dual quadratic subproblem:
+  2) **Box-constrained primal subproblem**
+     - Solved as a quadratic program when the unconstrained step is not feasible.
 
-    minimize   0.5 * || JF' * λ ||²
-    subject to λ ≥ 0,  sum(λ) = 1
+--------------------------------------------------------------------------------
+**Function signature:**
 
-- For m = 2:  an analytical closed-form solution is used.
-- For m > 2:  the problem is solved as a convex quadratic program (QP) using RipQP.
+    evalPG!(d, lambda, d_unc, lambda_unc, n, m, x, JF, l, u)
 
-The descent direction is then:
+--------------------------------------------------------------------------------
+**In-place Input / Output (modified):**
 
-    d = -JF' * λ
+     d           : Final projected gradient direction
+     lambda      : Final multipliers associated with the active objectives
+     d_unc       : Unconstrained steepest descent direction
+     lambda_unc  : Multipliers from the unconstrained steepest descent direction
 
-------------------------------------------------------------------------------
-BOX-CONSTRAINED CASE  (boxConstrained = true)
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+**Read-only Input:**
 
-Solve the primal quadratic subproblem:
+     n      : Number of variables
+     m      : Number of objective functions
+     x      : Current iterate
+     JF     : Jacobian matrix (m × n), rows = ∇fᵢ(x)
+     l, u   : Lower and upper box bounds
 
-    minimize   t + 0.5 * || d ||²
-    subject to (∇f_j(x))' * d ≤ t,   j = 1,...,m
-               l - x ≤ d ≤ u - x
+--------------------------------------------------------------------------------
+**Return value (Int flag):**
 
-This corresponds to the projected steepest descent direction on the box B = [l, u].
-The problem is formulated and solved as a convex QP using RipQP.
+     1  : Successful computation
+    -1  : Failure in the quadratic solver (box-constrained case)
 
-------------------------------------------------------------------------------
-ARGUMENTS
-------------------------------------------------------------------------------
-- n         : number of variables
-- m         : number of objectives
-- JF        : mxn matrix containing the gradients ∇fᵢ(x)' as rows
-- d         : output vector (steepest descent direction)
-- λ         : output vector (Lagrange multipliers)
-
-------------------------------------------------------------------------------
-KEYWORD ARGUMENTS
-------------------------------------------------------------------------------
-- boxConstrained : if true, solve the box-constrained primal QP
-                   otherwise, solve the dual unconstrained QP
-- x : current point (used only when boxConstrained = true)
-- l : lower bound vector of the box constraint
-- u : upper bound vector of the box constraint
-
-------------------------------------------------------------------------------
-RETURNS
-------------------------------------------------------------------------------
-A tuple (d, λ, info) where:
-- d     : steepest descent direction (projected if box-constrained)
-- λ     : optimal Lagrange multipliers
-- info  : termination flag
-          1  → success or first-order convergence
-         -1  → numerical issue or solver failure
-
-------------------------------------------------------------------------------
-NOTES
-------------------------------------------------------------------------------
-- For m = 2, the solution is analytical (no solver required).
-- For m > 2, RipQP is used to solve the dual or primal QP.
-- The resulting direction d satisfies:
-      d = -JF' * λ          (unconstrained case)
-      d = P_{B-x}(-JF' * λ) (box-constrained case)
+--------------------------------------------------------------------------------
 """
 function evalPG!(d::AbstractVector{T}, lambda::Vector{T}, d_unc::AbstractVector{T}, lambda_unc::Vector{T},
     n::Int, m::Int , x::Vector{T}, JF::Matrix{T}, l::Vector{T}, u:: Vector{T}) where {T<:AbstractFloat}
@@ -144,6 +110,49 @@ function evalPG!(d::AbstractVector{T}, lambda::Vector{T}, d_unc::AbstractVector{
 end
 
 
+"""
+--------------------------------------------------------------------------------
+**evalSD! — Dual Steepest Descent Subproblem (Unconstrained Case)**
+
+Solves the unconstrained steepest descent dual subproblem:
+
+    min_λ   0.5 ‖ JF' * λ ‖²
+    s.t.    λ ≥ 0,   sum(λ) = 1
+
+The primal directional solution is then given by:
+
+    d = - JF' * λ
+
+Two cases are handled:
+
+  • m = 2  → Explicit analytical solution  
+  • m > 2  → Quadratic program solved by RipQP
+
+--------------------------------------------------------------------------------
+**Function signature:**
+
+    evalSD!(d, lambda, m, JF)
+
+--------------------------------------------------------------------------------
+**In-place Input / Output (modified):**
+
+     d        : Unconstrained steepest descent direction
+     lambda   : Optimal dual multipliers
+
+--------------------------------------------------------------------------------
+**Read-only Input:**
+
+     m      : Number of objective functions
+     JF     : Jacobian matrix (m × n)
+
+--------------------------------------------------------------------------------
+**Return value (Int flag):**
+
+     1  : Successful solve
+    -1  : Failure in the quadratic solver
+
+--------------------------------------------------------------------------------
+"""
 function evalSD!(d::AbstractVector{T}, lambda::Vector{T}, m::Int, JF::Matrix{T}) where {T<:AbstractFloat}
     # ------------------------------------------------------------
     # Case m = 2 (explicit analytical solution)

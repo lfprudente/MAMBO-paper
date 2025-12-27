@@ -1,11 +1,10 @@
 """
-================================================================================
-asaMOP! — Active-Set Algorithm for Box-Constrained Multiobjective Optimization
-================================================================================
+-------------------------------------------------------------------------------- 
+**MAMBO! — Multiobjective Active-set Method for Box-constrained Optimization**
 
 This routine implements the active-set algorithm proposed in:
 
-    N. Fazzio, L. F. Prudente, M. D. Sánchez, M. L. Schuverdt
+    N. Fazzio, L. F. Prudente, and M. L. Schuverdt
     "An active-set method for box-constrained multiobjective optimization"
 
 The method alternates between:
@@ -13,28 +12,51 @@ The method alternates between:
   - Face-exploring iterations (truncated Newton–Gradient on the current face)
 
 --------------------------------------------------------------------------------
-Function signature:
+**Function signature:**
 
-    asaMOP!(n, m, x, l, u; epsopt, scaleF, iprint)
+    MAMBO!(x, n, m, l, u; epsopt, scaleF, iprint)
 
-Input:
-    n        : Number of variables
-    m        : Number of objective functions
-    x        : Initial point (modified in-place)
-    l, u     : Lower and upper bounds (box constraints)
-    epsopt   : Optimality tolerance on θ_B(x)
-    scaleF   : Enable/disable objective scaling
-    iprint   : Enable/disable iteration printing
+**In-place Input / Output:**
 
-Output:
-    (xsol, stats), where:
-        xsol   : Final solution
-        stats  : Named tuple with iterations, evaluations, θ, and termination flag
+     x      : Initial point (overwritten in-place by the final solution)
 
-================================================================================
+**Read-only Input:**
+
+     n      : Number of variables
+     m      : Number of objective functions
+     l, u   : Lower and upper bounds (box constraints)
+     epsopt : Optimality tolerance on θ_B(x)
+     scaleF : Enable/disable objective scaling
+     iprint : Enable/disable iteration printing
+
+**Output:**
+
+     stats::NamedTuple with fields:
+
+        stats.outiter : number of outer iterations
+        stats.time    : total CPU time
+        stats.nfev    : number of objective evaluations
+        stats.ngev    : number of gradient evaluations
+        stats.nhev    : number of Hessian evaluations
+        stats.theta   : final optimality measure θ_B(x)
+        stats.inform  : termination flag
+
+--------------------------------------------------------------------------------
+**Termination flags (inform):**
+
+     1 : Solution found (|θ_B(x)| ≤ epsopt)
+     2 : Maximum number of outer iterations reached
+     3 : Lack of progress (function value, projected gradient, or iterates)
+     4 : Objective function appears unbounded
+    -1 : Failure in function, gradient, or Hessian evaluation
+    -2 : Failure in the projected gradient subproblem
+    -3 : Failure in the line search
+
+--------------------------------------------------------------------------------
 """
-function asaMOP!(n::Int, m::Int,
-                x::Vector{T}, l::Vector{T}, u::Vector{T};
+function MAMBO!(x::Vector{T},
+                n::Int, m::Int,
+                l::Vector{T}, u::Vector{T};
                 epsopt::T = 5.0*MACHEPS12,
                 scaleF::Bool = true, iprint::Bool = true) where {T<:AbstractFloat}
 
@@ -50,10 +72,10 @@ function asaMOP!(n::Int, m::Int,
 
     (; F, JF, JFprev, JFtrial, H, Hlambda, g, d, vB, vF, vS, dBB, dSD, xplus, xprev, xtrial, 
        s, lambda, lambdaSD, tmp, JFd, Fplus, Ftrial, Fbest, sF, glambda, varfree, isfree, 
-       infoLS, ittype, aCGEPS, bCGEPS, sts, ssupn, seucn, samep) = ws
+       theta, infoLS, ittype, aCGEPS, bCGEPS, sts, ssupn, seucn, samep) = ws
 
     # Compute scaling factors for the objectives
-    scalefactor!(n, m, x, scaleF, sF)
+    scalefactor!(sF, n, m, x, scaleF)
 
     # Counters
     outiter = 0
@@ -73,23 +95,7 @@ function asaMOP!(n::Int, m::Int,
     # Print problem information
     max_print_obj = min(m, 5)
 
-    if iprint
-        @printf("\n-------------------------------------------------------------------------")
-        @printf("\n         Active Set Algorithm for Multiobjective Optimization            ")
-        @printf("\n-------------------------------------------------------------------------")
-        @printf("\nNumber of variables: %6d\nNumber of functions: %6d\n", n, m)
-        @printf("\nOptimality tolerance: %7.1E\n", epsopt)
-        if scaleF
-            @printf("\nSmallest objective scale factor: %.0e ", minimum(sF))
-        end
-        @printf("\nFloating-point type            : %s\n\n", string(T))
-
-        header = "\n  It      Optimal   "
-                for j in 1:max_print_obj
-                    header *= @sprintf("ObjFun%-1d   ", j)
-                end
-                header *= "ItType  LS  IS   #evalf  #evalg  #evalh\n"
-    end
+    header = print_header(n, m, epsopt, scaleF, sF,  max_print_obj, iprint)
 
     # ============================================================
     # Initial function and gradient evaluations
@@ -97,21 +103,21 @@ function asaMOP!(n::Int, m::Int,
 
     # Evaluate the objective function F at x
     for i in 1:m
-        F[i], flag = sevalf(n, x, i, sF[i])
+        F[i], flag = sevalf(i, x, n, sF[i])
         nfev += 1
         if flag != 1
             inform = -1
-            return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+            return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
         end
     end
 
     # Compute Jacobian JF (gradients of all objectives)
     for i in 1:m
-        flag = sevalg!(n, x, g, i, sF[i])
+        flag = sevalg!(g, i, x, n, sF[i])
         ngev += 1
         if flag != 1
             inform = -1
-            return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+            return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
         end
         @views JF[i, :] .= g
     end
@@ -135,7 +141,7 @@ function asaMOP!(n::Int, m::Int,
 
         if infoIS != 1
             inform = -2
-            return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+            return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
         end
 
         vBeucn = norm(vB)
@@ -145,12 +151,15 @@ function asaMOP!(n::Int, m::Int,
         mul!(tmp, JF, vB)
         theta = maximum(tmp) + 0.5 * vBeucn^2
         abstheta = abs(theta)
-
+        
+        # ========================================================
         # Print iteration information
+        # ========================================================
+
         if iprint
             if outiter % 10 == 0;  print(header); end
 
-            objstr = ""
+            objstr = " "
             for j in 1:max_print_obj
                 objstr *= @sprintf("%9.2E ", F[j])
             end
@@ -159,7 +168,7 @@ function asaMOP!(n::Int, m::Int,
                 @printf("%4d     %8.2E %s     %s     -   %1d   %6d  %6d  %6d\n",
                     outiter, abstheta, objstr, ittype, infoIS, nfev, ngev, nhev)
             else
-                @printf("%4d     %8.2E %s  %s   %1d   %1d   %6d  %6d  %6d\n",
+                @printf("%4d     %8.2E %s   %s   %1d   %1d   %6d  %6d  %6d\n",
                     outiter, abstheta, objstr, ittype, infoLS, infoIS, nfev, ngev, nhev)
             end
         end
@@ -171,13 +180,13 @@ function asaMOP!(n::Int, m::Int,
         # Test optimality condition: |θ_B(x)| ≤ epsopt
         if abstheta <= epsopt
             inform = 1
-            return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+            return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
         end
 
         # Test whether the number of iterations is exhausted
         if outiter >= MAXOUTITER
             inform = 2
-            return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+            return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
         end
 
         # Lack-of-progress tests (functional value, projected gradient, iterates)
@@ -213,14 +222,14 @@ function asaMOP!(n::Int, m::Int,
 
             if itnp >= ITNPLEVEL
                 inform = 3
-                return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
             end
         end     
 
         # Test whether the functional value is unbounded
         if all(F .<= FMIN)
             inform = 4
-            return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+            return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
         end
 
         # ========================================================
@@ -268,7 +277,7 @@ function asaMOP!(n::Int, m::Int,
 
             if infoIS != 1
                 inform = -2
-                return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
             end
 
             # Compute the Euclidian norm of vS
@@ -293,7 +302,7 @@ function asaMOP!(n::Int, m::Int,
             # Face-abandoning iteration: Barzilai–Borwein spectral variant direction
             # ========================================================
 
-            ittype = "Abn-Ar"
+            ittype = "Ab-Ar"
 
             # Barzilai–Borwein step length parameter β_BB
             if outiter == 1
@@ -316,34 +325,43 @@ function asaMOP!(n::Int, m::Int,
                
             beta_BB = clamp(beta_BB, BETA_MIN, BETA_MAX)
 
+            use_BB     = false
+            leave_face = false
+
             # Compute the Barzilai–Borwein spectral direction
             if beta_BB != ONE
                 infoIS = evalPG!(dBB, lambda, dSD, lambdaSD, n, m, x, beta_BB * JF, l, u)
-            else
-                infoIS = 0
+
+                if infoIS == 1
+                    # Check whether dBB actually moves outside the current face
+                    leave_face = any(abs(dBB[i]) > MACHEPS12 && !isfree[i] for i in 1:n)
+
+                    if leave_face
+                        # Directional derivatives along dBB
+                        mul!(tmp, JF, dBB)
+                        use_BB = maximum(tmp) < ZERO
+                    end
+                end
             end
 
-            if infoIS == 1
-                # Check whether dBB actually moves outside the current face
-                leave_face = any(abs(dBB[i]) > MACHEPS12 && !isfree[i] for i in 1:n)
-                d .= leave_face ? dBB : vB
+            if use_BB
+                d .= dBB
+                JFd .= tmp
             else
                 d .= vB
+                mul!(JFd, JF, d)
             end
             
             # Initial trial step
             stp = ONE
 
-            # Compute directional derivatives
-            mul!(JFd, JF, d)
-
             # Line search with Armijo-type condition
-            nfevLS, infoLS = armijo!(xplus, Fplus, n, m, stp, x, F, d, JFd, sF)
+            nfevLS, infoLS = armijo!(xplus, Fplus, n, m, stp, x, F, d, JFd, l, u, sF)
             nfev += nfevLS
 
             if infoLS < 0
                 inform = infoLS == -2 ? -1 : -3
-                return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
             end
         else
             # ========================================================
@@ -372,11 +390,11 @@ function asaMOP!(n::Int, m::Int,
             # Evaluate scalarized Hessian at x
             fill!(Hlambda, ZERO)
             for i in 1:m
-                flag = sevalh!(n, x, H, i, sF[i])
+                flag = sevalh!(H, i, x, n, sF[i])
                 nhev += 1
                 if flag != 1
                     inform = -1
-                    return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                    return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
                 end
                 @views Hlambda .+= lambdaSD[i] * H
             end
@@ -389,7 +407,13 @@ function asaMOP!(n::Int, m::Int,
             dfree = @view d[indfree]
             
             truncatedCG!(dfree, nfree, m, vSeucn, CGDEL, CGEPS, CGMAXIT, x[indfree], l[indfree], u[indfree], JF[:, indfree], gred, Hred)
-                                
+            
+            # cginfo, _ =truncatedCG!(dfree, n, x, nfree, m, indfree, vSeucn, CGDEL, CGEPS, CGMAXIT, x[indfree], l[indfree], u[indfree], JF[:, indfree], gred, Hred, lambdaSD, sF)
+            # if cginfo == -1
+            #     inform = -1
+            #     return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
+            # end   
+                             
             # Compute maximum feasible step size
             stpmax = stepmax(nfree, x[indfree], l[indfree], u[indfree], dfree)
 
@@ -410,11 +434,11 @@ function asaMOP!(n::Int, m::Int,
                 ftest = FTOL * Dxd
                 
                 for i in 1:m
-                    Ftrial[i],flag = sevalf(n, xtrial, i, sF[i])
+                    Ftrial[i],flag = sevalf(i, xtrial, n, sF[i])
                     nfev += 1
                     if flag != 1
                         inform = -1
-                        return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                        return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
                     end
 
                     if Ftrial[i] > F[i] + ftest
@@ -426,11 +450,11 @@ function asaMOP!(n::Int, m::Int,
                 if sdc
                     # Test the curvature condition at x + d
                     for i in 1:m
-                        flag = sevalg!(n, xtrial, g, i, sF[i])
+                        flag = sevalg!(g, i, xtrial, n, sF[i])
                         ngev += 1
                         if flag != 1
                             inform = -1
-                            return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                            return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
                         end
 
                         @views JFtrial[i, :] .= g
@@ -440,46 +464,47 @@ function asaMOP!(n::Int, m::Int,
                     Dxtriald = maximum(tmp)
 
                     if Dxtriald >= GTOL * Dxd
-                        ittype = "Exp-I1"
+                        ittype = "EI-1 "
 
                         # Accept unit step and reuse JFtrial
+                        infoLS  = 1
                         compJF  = false
                         JFprev .= JF
                         JF     .= JFtrial
                         Fplus .= Ftrial
                         xplus .= xtrial  
                     else
-                        ittype = "Exp-IE"
+                        ittype = "EI-Ex"
 
                         # Extrapolation procedure
                         nfevext, infoLS = extrapolation!(xplus, Fplus, n, m, stp, stpmax, x, F, d, indfree, sF, l ,u)
                         nfev += nfevext
                     end
                 else
-                    ittype = "Exp-IA"
+                    ittype = "EI-Ar"
 
                     # Line search with Armijo-type condition
-                    nfevLS, infoLS = armijo!(xplus, Fplus, n, m, stp, x, F, d, JFd, sF)
+                    nfevLS, infoLS = armijo!(xplus, Fplus, n, m, stp, x, F, d, JFd, l, u, sF)
                     nfev += nfevLS
 
                     if infoLS < 0
                         inform = infoLS == -2 ? -1 : -3
-                        return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                        return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
                     end
                 end
             else
                 # -----------------------------------------------
                 # First trial is at the boundary: x + stp d
                 # -----------------------------------------------
-                @. xtrial = x + stp * d
+                @. xtrial = clamp(x + stp * d, l, u)
 
                 sdc = true
                 for i in 1:m
-                    Ftrial[i],flag = sevalf(n, xtrial, i, sF[i])
+                    Ftrial[i],flag = sevalf(i, xtrial, n, sF[i])
                     nfev += 1
                     if flag != 1
                         inform = -1
-                        return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                        return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
                     end
 
                     if Ftrial[i] > F[i]
@@ -489,23 +514,23 @@ function asaMOP!(n::Int, m::Int,
                 end
 
                 if sdc
-                    ittype = "Exp-BE"
+                    ittype = "EB-Ex"
                     # Extrapolation procedure
                     nfevext, infoLS = extrapolation!(xplus, Fplus, n, m, stp, stpmax, x, F, d, indfree, sF, l ,u)
                     nfev += nfevext
                 else
-                    ittype = "Exp-BA"
+                    ittype = "EB-Ar"
                     
                     # Compute directional derivatives
                     mul!(JFd, JF[:, indfree], dfree)
 
                     # Line search with Armijo-type condition
-                    nfevLS, infoLS = armijo!(xplus, Fplus, n, m, stp, x, F, d, JFd, sF)
+                    nfevLS, infoLS = armijo!(xplus, Fplus, n, m, stp, x, F, d, JFd, l, u, sF)
                     nfev += nfevLS
 
                     if infoLS < 0
                         inform = infoLS == -2 ? -1 : -3
-                        return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                        return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
                     end
                 end
             end
@@ -548,11 +573,11 @@ function asaMOP!(n::Int, m::Int,
         if compJF
             JFprev .= JF
             for i in 1:m
-                flag = sevalg!(n, x, g, i, sF[i])
+                flag = sevalg!(g, i, x, n, sF[i])
                 ngev += 1
                 if flag != 1
                     inform = -1
-                    return finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+                    return finish(t0, outiter, nfev, ngev, nhev, theta, inform, iprint)
                 end
                 @views JF[i, :] .= g
             end
@@ -563,25 +588,64 @@ end
 # ------------------------------------------------------------
 # Helper
 # ------------------------------------------------------------
-function finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
+function print_header(n::Int, m::Int, epsopt::T, scaleF::Bool, sF::Vector{T}, 
+    max_print_obj::Int, iprint::Bool)  where {T<:AbstractFloat}
+    if iprint
+        @printf("\n--------------------------------------------------------------------------")
+        @printf("\n MAMBO: Multiobjective Active-Set Method for Box-Constrained Optimization ")
+        @printf("\n--------------------------------------------------------------------------")
+        @printf("\nNumber of variables: %6d\nNumber of functions: %6d\n", n, m)
+        @printf("\nOptimality tolerance: %7.1E\n", epsopt)
+        if scaleF
+            @printf("\nSmallest objective scale factor: %.0e ", minimum(sF))
+        end
+        @printf("\nFloating-point type            : %s\n", string(T))
+
+        @printf("\nOutput:")
+        @printf("\n - It: outer iteration counter")
+        @printf("\n - Optimal: optimality measure |θ_B(x)|")
+        @printf("\n - ObjFun[i]: value of the i-th objective function")
+        @printf("\n - ItType: iteration type")
+        @printf("\n    FA-Ar : Face-abandoning with Armijo")
+        @printf("\n    EI-1  : Exploring the interior, unit step accepted")
+        @printf("\n    EI-Ex : Exploring the interior with extrapolation")
+        @printf("\n    EI-Ar : Exploring the interior with Armijo")
+        @printf("\n    EB-Ex : Exploring the boundary with extrapolation")
+        @printf("\n    EB-Ar : Exploring the boundary with Armijo")
+        @printf("\n - LS, IS: Line search and inner solver flags")
+        @printf("\n - #evalf, #evalg, #evalh: number of objective, gradient and Hessian evaluations\n\n")
+        
+        header = "\n  It      Optimal    "
+                for j in 1:max_print_obj
+                    header *= @sprintf("ObjFun%-1d   ", j)
+                end
+                header *= "ItType  LS  IS   #evalf  #evalg  #evalh\n"
+        return header
+    end
+end
+
+# ------------------------------------------------------------
+
+function finish(t0::T, outiter::Int, nfev::Int, ngev::Int, nhev::Int, 
+    theta::T, inform::Int, iprint::Bool)  where {T<:AbstractFloat}
     time_spent = time() - t0
     if iprint
         if inform == 1
-            @printf("\nFlag of asaMOP: Solution was found\n")
+            @printf("\nFlag of MAMBO: Solution was found\n")
         elseif inform == 2
-            @printf("\nFlag of asaMOP: Maximum of iterations reached\n")
+            @printf("\nFlag of MAMBO: Maximum of iterations reached\n")
         elseif inform == 3
-            @printf("\nFlag of asaMOP: Lack of progress in the functional value, its gradient and the current point\n")
+            @printf("\nFlag of MAMBO: Lack of progress in the functional value, its gradient and the current point\n")
         elseif inform == 4
-            @printf("\nFlag of asaMOP: Objective function seems to be unbounded\n")
+            @printf("\nFlag of MAMBO: Objective function seems to be unbounded\n")
         elseif inform == -1
-            @printf("\nFlag of asaMOP: An error occurred during the evaluation of a function\n")
+            @printf("\nFlag of MAMBO: An error occurred during the evaluation of a function\n")
         elseif inform == -2
-            @printf("\nFlag of asaMOP: An error occurred during the subproblem solution\n")
+            @printf("\nFlag of MAMBO: An error occurred during the subproblem solution\n")
         elseif inform == -3
-            @printf("\nFlag of asaMOP: An error occurred during the linesearch\n")
+            @printf("\nFlag of MAMBO: An error occurred during the linesearch\n")
         else
-            @printf("\nFlag of asaMOP: Unknown termination code (%d)\n", inform)
+            @printf("\nFlag of MAMBO: Unknown termination code (%d)\n", inform)
         end
         @printf("\nNumber of functions evaluations: %6d\n", nfev)
         @printf("Number of gradients evaluations: %6d\n", ngev)
@@ -589,7 +653,7 @@ function finish(t0, x, outiter, nfev, ngev, nhev, theta, inform, iprint)
         @printf("Total CPU time in seconds:       %8.2f\n\n", time_spent)
     end
 
-    return x, (
+    return (
         outiter = outiter,
         time    = time_spent,
         nfev    = nfev,

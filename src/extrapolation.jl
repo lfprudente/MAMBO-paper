@@ -1,3 +1,59 @@
+"""
+--------------------------------------------------------------------------------
+extrapolation! — Extrapolation Procedure for Face-Exploring Steps
+--------------------------------------------------------------------------------
+
+Performs an extrapolation procedure along a given search direction in order to
+expand a successful face-exploring step. The step size is iteratively increased
+by a multiplicative factor until one of the stopping conditions is met.
+
+At each extrapolated point:
+
+    x⁺ = x + stp · d
+
+the objective functions are evaluated and the extrapolation proceeds only
+while all objectives strictly decrease.
+
+--------------------------------------------------------------------------------
+Function signature:
+
+    extrapolation!(x, F, n, m, stp, stpmax, x0, F0, d, indfree, sF, l, u)
+
+--------------------------------------------------------------------------------
+In-place Input / Output:
+
+    x : Current extrapolated point (overwritten in-place)
+    F : Objective values at x (overwritten in-place)
+
+--------------------------------------------------------------------------------
+Read-only Input:
+
+    n, m     : Number of variables and objective functions
+    stp      : Initial step size
+    stpmax   : Maximum admissible step size
+    x0       : Starting point of the extrapolation
+    F0       : Objective values at x0
+    d        : Search direction
+    indfree  : Indices of free variables (face being explored)
+    sF       : Scaling factors for the objectives
+    l, u     : Lower and upper bounds
+
+--------------------------------------------------------------------------------
+Output (returned values):
+
+    (nfev, info)
+
+    nfev : Number of objective function evaluations performed
+    info : Termination flag
+
+        1 : Functional increase detected (extrapolation stopped)
+        2 : Objective function appears to be unbounded below
+        3 : Maximum number of extrapolations reached
+        4 : Projected extrapolated point coincides with previous iterate
+        5 : Failure during function evaluation
+
+--------------------------------------------------------------------------------
+"""
 function extrapolation!(x::Vector{T}, F::Vector{T},
                         n::Int, m::Int, stp::T, stpmax::T, 
                         x0::Vector{T}, F0::Vector{T}, d::Vector{T}, 
@@ -55,7 +111,7 @@ function extrapolation!(x::Vector{T}, F::Vector{T},
         # ---------------------------------------------
         # Compute extrapolated trial point
         # ---------------------------------------------
-        @. xtmp = x + stp_new * d
+        @. xtmp = clamp(x + stp_new * d, l, u)
 
         # ---------------------------------------------
         # Projection test
@@ -93,7 +149,7 @@ function extrapolation!(x::Vector{T}, F::Vector{T},
         # Evaluate all objective functions at xtmp
         # ---------------------------------------------
         for i in 1:m
-            Fi, flag = sevalf(n, xtmp, i, sF[i])
+            Fi, flag = sevalf(i, xtmp, n, sF[i])
             nfev += 1
 
             if flag != 1

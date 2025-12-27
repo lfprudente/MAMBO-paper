@@ -1,2 +1,38 @@
+# Julia
+*.jl~
+*.ji
+*.cov
+*.mem
+.DS_Store
+
+# Julia environments
+Manifest.toml
+**/Manifest.toml
+
+# Build / cache
+.julia/
+deps/
+logs/
+
+# Editor / OS
+.vscode/
+.idea/
+cat .gitignore
+# =========================
+# Julia
+# =========================
+.julia/
+*.ji
+*.so
+*.dylib
+*.dll
+Manifest.toml
+
+# macOS
+.DS_Store
+
+*.dat
+*.csv
+*.pdf
 Manifest.toml.vscode/
 .DS_Store

@@ -1,28 +1,35 @@
-# ============================================================
-# stepmax
-# ============================================================
 """
-    stepmax(nind::Int, ind::Vector{Int},
-            x::Vector{T}, l::Vector{T},
-            u::Vector{T}, d::Vector{T}) where {T<:AbstractFloat}
+--------------------------------------------------------------------------------
+stepmax — Maximum Feasible Step Length for Box Constraints
+--------------------------------------------------------------------------------
 
-Compute the maximum step length `stpmax > 0` such that the
-inequality constraints are satisfied:
+Computes the maximum step length `stpmax > 0` such that the box constraints
+remain satisfied along the search direction:
 
-    l ≤ x + stpmax * d ≤ u
+    l ≤ x + stpmax · d ≤ u
 
-# Arguments
-- `nind`   : number of active indices (size of `ind`)
-- `ind`    : vector of indices to be checked (1-based)
-- `x`      : current point vector
-- `l`, `u` : lower and upper bounds
-- `d`      : search direction
+Only the first `nind` components of the vectors are considered. This version
+assumes that `x`, `l`, `u` and `d` are already restricted to the active indices.
 
-# Returns
-- `stpmax` : the maximum feasible step size along direction `d`
+--------------------------------------------------------------------------------
+Function signature:
 
-# Notes
-Only the components specified by `ind` are checked.
+    stepmax(nind, x, l, u, d)
+
+--------------------------------------------------------------------------------
+Input:
+
+    nind : Number of active components (free variables)
+    x    : Current point (restricted to the active indices)
+    l,u  : Lower and upper bounds (restricted to the active indices)
+    d    : Search direction (restricted to the active indices)
+
+--------------------------------------------------------------------------------
+Output:
+
+    stpmax : Maximum feasible step size along direction d
+
+--------------------------------------------------------------------------------
 """
 function stepmax(nind::Int, x::Vector{T}, l::Vector{T},
                  u::Vector{T}, d::AbstractVector{T}) where {T<:AbstractFloat}

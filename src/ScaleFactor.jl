@@ -1,30 +1,50 @@
-
 """
-    scalefactor(n::Int, m::Int, x::Vector{T}, scaleF::Bool) -> Vector{T}
-    
-Compute objective function scaling factors based on the gradients at `x`.
+--------------------------------------------------------------------------------
+scalefactor! — Objective Scaling Factor Computation
+--------------------------------------------------------------------------------
 
-# Description
-If `scaleF` is true, each scaling factor `sF[ind]` is computed as:
-`sF[ind] = max(√eps(T), 1 / max(1, ||∇fᵢ(x)||_infty))`.
-If `scaleF` is `false`, all scaling factors are set to 1.
+Computes scaling factors for each objective function based on the infinity norm
+of their gradients evaluated at the current point `x`.
 
-# Arguments
-- `n`       : number of variables
-- `m`       : number of objectives
-- `x`       : current point
-- `scaleF`  : whether to compute scaling factors (`true`) or set them to 1 (`false`)
+When enabled, scaling reduces numerical imbalance between objective functions
+by normalizing their gradient magnitudes.
 
-# Returns
-- `sF::Vector{T}` : vector of scaling factors (length `m`)
+--------------------------------------------------------------------------------
+Function signature:
+
+    scalefactor!(sF, n, m, x, scaleF)
+
+--------------------------------------------------------------------------------
+In-place Input / Output:
+
+    sF : Vector of scaling factors (overwritten in-place)
+
+--------------------------------------------------------------------------------
+Read-only Input:
+
+    n      : Number of variables
+    m      : Number of objective functions
+    x      : Current point
+    scaleF : Enable (`true`) or disable (`false`) objective scaling
+
+--------------------------------------------------------------------------------
+Scaling rule (when `scaleF = true`):
+
+    sF[i] = max( sqrt(eps(T)), 1 / max(1, ‖∇fᵢ(x)‖_∞) )
+
+If `scaleF = false`, then:
+
+    sF[i] = 1   for all i = 1,…,m
+        
+--------------------------------------------------------------------------------
 """
-function scalefactor!(n::Int, m::Int, x::Vector{T}, scaleF::Bool, sF::Vector{T})  where {T<:AbstractFloat}
+function scalefactor!(sF::Vector{T}, n::Int, m::Int, x::Vector{T}, scaleF::Bool)  where {T<:AbstractFloat}
     # Allocate local gradient vector
     g = similar(x)
 
     if scaleF
         for ind in 1:m
-            evalg!(n, x, g, ind)
+            evalg!(g, ind, x, n)
             sF[ind] = max(MACHEPS12, ONE / max(ONE, norm(g, Inf)))
         end
     else

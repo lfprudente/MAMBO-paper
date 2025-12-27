@@ -1,0 +1,412 @@
+module MetricsRel
+
+# ============================================================
+# metrics_rel.jl
+#
+# Relative performance metrics for multiobjective optimization
+# based on ε-dominance (relative tolerance).
+#
+# Metrics included:
+# - Relative non-dominated set
+# - Purity (classical definition, |A ∩ R| / |A|)
+# - Covering (C-metric)
+# - Γ-spread (maximum gap definition)
+# - Δ-spread (Deb / CEC definition)
+# - Hypervolume (normalized using ideal/nadir of the reference set)
+#
+# All metrics are defined for minimization problems.
+# ============================================================
+
+using LinearAlgebra
+using Statistics
+import Metaheuristics
+
+# ============================================================
+# Global tolerances
+# ============================================================
+
+const DEFAULT_ATOL = sqrt(eps(Float64))
+const DEFAULT_RTOL = sqrt(eps(Float64))
+
+# ============================================================
+# Utility functions
+# ============================================================
+
+# Approximate equality between two objective vectors
+isvecapprox(a, b; atol=DEFAULT_ATOL, rtol=DEFAULT_RTOL) =
+    all(isapprox.(a, b; atol=atol, rtol=rtol))
+
+# Normalize a Pareto front using global ideal/nadir points
+function normalize_front(front, ideal, nadir)
+    # Protect against division by zero (degenerate coordinates)
+    den = max.(nadir .- ideal, eps())
+    [(f .- ideal) ./ den for f in front]
+end
+
+# ============================================================
+# Relative ε-dominance comparison
+# ============================================================
+
+"""
+    compare_rel(a, b; atol, rtol)
+
+Relative ε-dominance comparison between objective vectors `a` and `b`
+(minimization).
+
+Returns:
+- 1 : `a` dominates `b`
+- 2 : `b` dominates `a`
+- 3 : `a` and `b` are incomparable
+- 0 : `a` and `b` are approximately equal
+"""
+function compare_rel(a::AbstractVector, b::AbstractVector;
+                     atol::Real = DEFAULT_ATOL,
+                     rtol::Real = DEFAULT_RTOL)
+
+    k = length(a)
+    @assert k == length(b) "Objective vectors must have the same length."
+
+    a_better = false
+    b_better = false
+    approx_equal = true
+
+    for i in 1:k
+        tol = max(atol, rtol * max(abs(a[i]), abs(b[i])))
+
+        abs(a[i] - b[i]) > tol && (approx_equal = false)
+
+        if a[i] < b[i] - tol
+            a_better = true
+        elseif b[i] < a[i] - tol
+            b_better = true
+        end
+
+        a_better && b_better && return 3
+    end
+
+    approx_equal && return 0
+    a_better && return 1
+    b_better && return 2
+    return 0
+end
+
+# ============================================================
+# Relative non-dominated sets
+# ============================================================
+
+"""
+    get_non_dominated_solutions_perm_rel(population; atol, rtol)
+
+Return indices of the relative non-dominated solutions
+using ε-dominance.
+"""
+function get_non_dominated_solutions_perm_rel(population;
+                                              atol=DEFAULT_ATOL,
+                                              rtol=DEFAULT_RTOL)
+
+    n = length(population)
+    n == 0 && return Int[]
+
+    ids = Int[1]
+
+    for i in 2:n
+        j = 1
+        while j <= length(ids)
+            jj = ids[j]
+            rel = compare_rel(population[i], population[jj];
+                              atol=atol, rtol=rtol)
+
+            if rel == 2          # existing solution dominates candidate
+                break
+            elseif rel == 1      # candidate dominates existing solution
+                deleteat!(ids, j)
+                continue
+            end
+            j += 1
+        end
+
+        j > length(ids) && push!(ids, i)
+    end
+
+    return ids
+end
+
+"""
+    get_non_dominated_solutions_rel(population; atol, rtol)
+
+Return the relative non-dominated solutions
+using ε-dominance.
+"""
+function get_non_dominated_solutions_rel(population;
+                                         atol=DEFAULT_ATOL,
+                                         rtol=DEFAULT_RTOL)
+
+    population[get_non_dominated_solutions_perm_rel(population;
+                                                     atol=atol, rtol=rtol)]
+end
+
+"""
+    unique_tol(F; atol, rtol)
+
+Remove approximately equal objective vectors from `F`
+using ε-dominance equality.
+"""
+function unique_tol(F::Vector{<:AbstractVector};
+                    atol=DEFAULT_ATOL,
+                    rtol=DEFAULT_RTOL)
+
+    U = Vector{eltype(F)}()
+    for f in F
+        any(u -> compare_rel(f, u; atol=atol, rtol=rtol) == 0, U) || push!(U, f)
+    end
+    return U
+end
+
+# ============================================================
+# Purity (classical definition)
+# ============================================================
+
+"""
+    purity_rel(A, R; atol, rtol)
+
+Classical Purity metric:
+
+    Purity(A) = |A ∩ R| / |A|
+
+Measures how many solutions generated by algorithm A
+belong to the reference Pareto front R.
+
+Returns NaN if A is empty.
+"""
+function purity_rel(A::Vector{<:AbstractVector},
+                    R::Vector{<:AbstractVector};
+                    atol=DEFAULT_ATOL,
+                    rtol=DEFAULT_RTOL)
+
+    Auniq = unique_tol(A; atol=atol, rtol=rtol)
+    Runiq = unique_tol(R; atol=atol, rtol=rtol)
+
+    isempty(Auniq) && return NaN
+
+    matches = 0
+    for a in Auniq
+        for r in Runiq
+            if compare_rel(a, r; atol=atol, rtol=rtol) == 0
+                matches += 1
+                break
+            end
+        end
+    end
+
+    return matches / length(Auniq)
+end
+
+# ============================================================
+# Covering metric (C-metric)
+# ============================================================
+
+"""
+    covering_rel(A, B; atol, rtol)
+
+Covering metric C(A, B):
+
+Fraction of solutions in B that are dominated by at least
+one solution in A (relative ε-dominance).
+
+Returns NaN if B is empty.
+"""
+function covering_rel(A::Vector{<:AbstractVector},
+                      B::Vector{<:AbstractVector};
+                      atol=DEFAULT_ATOL,
+                      rtol=DEFAULT_RTOL)
+
+    A_nd = unique_tol(get_non_dominated_solutions_rel(A; atol=atol, rtol=rtol);
+                      atol=atol, rtol=rtol)
+    B_nd = unique_tol(get_non_dominated_solutions_rel(B; atol=atol, rtol=rtol);
+                      atol=atol, rtol=rtol)
+
+    isempty(B_nd) && return NaN
+
+    s = 0
+    for b in B_nd
+        any(a -> compare_rel(a, b; atol=atol, rtol=rtol) == 1, A_nd) && (s += 1)
+    end
+
+    return s / length(B_nd)
+end
+
+# ============================================================
+# Γ-spread (Gamma spread, max-gap definition)
+# ============================================================
+
+"""
+    gamma_spread(front, ideal, nadir)
+
+Gamma-spread metric based on the maximum gap per objective.
+
+For each objective j:
+- Sort solutions by f_j
+- Include ideal[j] and nadir[j]
+- Compute the maximum consecutive gap
+
+Gamma is the maximum gap over all objectives.
+
+Conventions:
+- length(front) == 0            → NaN
+- length(front) == 1:
+    - ideal == nadir             → NaN
+    - otherwise                  → Inf
+- ideal == nadir (degenerate)    → NaN
+
+NOTE:
+unique_tol is intentionally NOT applied to spread metrics (Gamma, Delta)
+in order to penalize clustering and lack of diversity.
+"""
+function gamma_spread(front, ideal, nadir;
+                      atol=DEFAULT_ATOL,
+                      rtol=DEFAULT_RTOL)
+
+    N = length(front)
+
+    if N == 0
+        return NaN
+    elseif N == 1
+        return isvecapprox(ideal, nadir; atol=atol, rtol=rtol) ? NaN : Inf
+    elseif isvecapprox(ideal, nadir; atol=atol, rtol=rtol)
+        return NaN
+    end
+
+    m = length(ideal)
+    Γ = -Inf
+    any_active = false
+
+    for j in 1:m
+        isapprox(ideal[j], nadir[j]; atol=atol, rtol=rtol) && continue
+        any_active = true
+
+        values = [f[j] for f in front]
+        values = vcat(ideal[j], values, nadir[j])
+        sort!(values)
+
+        gaps = diff(values)
+        Γ = max(Γ, maximum(gaps))
+    end
+
+    return any_active ? Γ : NaN
+end
+
+# ============================================================
+# Δ-spread (Delta spread, Deb / CEC definition)
+# ============================================================
+
+"""
+    delta_spread(front, ideal, nadir)
+
+Generalized Delta-spread metric (Deb-style) for m objectives.
+
+For each objective j:
+- Sort solutions by f_j
+- Compute internal gaps
+- Compute the mean internal gap
+- Penalize missing extreme solutions via ideal and nadir
+
+Delta is the maximum value over all objectives.
+
+Conventions:
+- length(front) == 0            → NaN
+- length(front) == 1:
+    - ideal == nadir             → NaN
+    - otherwise                  → Inf
+- ideal == nadir (degenerate)    → NaN
+
+NOTE:
+unique_tol is intentionally NOT applied to spread metrics (Gamma, Delta)
+in order to penalize clustering and lack of diversity.
+"""
+function delta_spread(front, ideal, nadir;
+                      atol=DEFAULT_ATOL,
+                      rtol=DEFAULT_RTOL)
+
+    N = length(front)
+
+    if N == 0
+        return NaN
+    elseif N == 1
+        return isvecapprox(ideal, nadir; atol=atol, rtol=rtol) ? NaN : Inf
+    elseif isvecapprox(ideal, nadir; atol=atol, rtol=rtol)
+        return NaN
+    end
+
+    m = length(ideal)
+    Δ = -Inf
+    any_active = false
+
+    for j in 1:m
+        isapprox(ideal[j], nadir[j]; atol=atol, rtol=rtol) && continue
+        any_active = true
+
+        Fj = sort(front, by = f -> f[j])
+        vals = [f[j] for f in Fj]
+
+        gaps = diff(vals)
+        d̄ = mean(gaps)
+
+        δ0 = vals[1]  - ideal[j]
+        δN = nadir[j] - vals[end]
+
+        isapprox(d̄, 0.0; atol=atol, rtol=rtol) && continue
+
+        Δj =
+            (δ0 + δN + sum(abs.(gaps .- d̄))) /
+            (δ0 + δN + length(gaps) * d̄)
+
+        Δ = max(Δ, Δj)
+    end
+
+    return any_active ? Δ : NaN
+end
+
+# ============================================================
+# Hypervolume (normalized)
+# ============================================================
+
+"""
+    hypervolume_normalized(front, ideal, nadir)
+
+Computes hypervolume after normalizing the objective values using
+the global ideal/nadir points. The reference point is the unit vector.
+
+Returns NaN if:
+- front is empty
+- ideal == nadir (objective space collapses)
+"""
+function hypervolume_normalized(front, ideal, nadir;
+                                atol=DEFAULT_ATOL,
+                                rtol=DEFAULT_RTOL,
+                                ref_offset = 1.1)
+
+    isempty(front) && return NaN
+    isvecapprox(ideal, nadir; atol=atol, rtol=rtol) && return NaN
+
+    front_u = unique_tol(front; atol=atol, rtol=rtol)
+    front_n = normalize_front(front_u, ideal, nadir)
+
+    m = length(ideal)
+    ref = fill(ref_offset, m)
+
+    hv_raw = Metaheuristics.PerformanceIndicators.hypervolume(front_n, ref)
+
+    return hv_raw / (ref_offset^m)
+end
+
+export compare_rel,
+       get_non_dominated_solutions_perm_rel,
+       get_non_dominated_solutions_rel,
+       unique_tol,
+       purity_rel,
+       covering_rel,
+       gamma_spread,
+       delta_spread,
+       hypervolume_normalized 
+
+end # module MetricsRel

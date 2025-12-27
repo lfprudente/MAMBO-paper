@@ -1,17 +1,31 @@
-# ============================================================
-# AlgConst.jl — Global numerical and algorithmic constants
-# ============================================================
+"""
+--------------------------------------------------------------------------------
+AlgConst.jl — Global numerical and algorithmic constants
+--------------------------------------------------------------------------------
 
-# ------------------------------------------------------------
-# IMPORTANT:
-# This file assumes that the floating-point type `T`
-# has already been defined as a constant in the parent module,
-# e.g.:
-#     const T = Float64
-# If you change T (e.g., to Float32), re-include this file
-# or reload the module to update the constants.
-# ------------------------------------------------------------
+This file defines all numerical tolerances and algorithmic parameters used
+by the Active-Set Algorithm for Box-Constrained Multiobjective Optimization.
 
+IMPORTANT:
+This file assumes that the floating-point type `T` has already been defined
+as a constant in the parent module, for example:
+
+    const T = Float64
+
+If `T` is changed (e.g., to Float32 or BigFloat), this file MUST be re-included
+or the module must be reloaded to correctly update all constants.
+
+Contents:
+  • Floating-point base constants
+  • Machine epsilon and derived tolerances
+  • Outer iteration limits
+  • Lack-of-progress parameters
+  • Spectral step bounds (Barzilai–Borwein)
+  • Armijo line search constants
+  • Extrapolation thresholds
+  • Truncated Conjugate Gradient parameters
+--------------------------------------------------------------------------------
+"""
 # ------------------------------------------------------------
 # Floating-point constants
 # ------------------------------------------------------------
@@ -63,6 +77,6 @@ const Next   = T(2.0)
 # ------------------------------------------------------------
 # Conjugate gradients constants
 # ------------------------------------------------------------
-const Γ1        = T(1.0e-6)
-const epsnqmp   = T(1.0e-8)
-const maxcgitnp = 5
+const GAMMA1    = T(1.0e-6)
+const EPSNQMP   = T(1.0e-8)
+const MAXCGITNP = 5

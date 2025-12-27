@@ -1,48 +1,74 @@
 """
-    truncated_cg(
-        JF::Matrix{T}, H::Matrix{T},
-        g::Vector{T}, x::Vector{T}, l::Vector{T}, u::Vector{T}, vSeucn::T,
-        delta::T, eps::T, maxit::Int
-    ) where {T<:AbstractFloat}
+--------------------------------------------------------------------------------
+**truncatedCG! — Truncated Conjugate Gradient for Face Newton Subproblem**
 
-Truncated Conjugate Gradients (CG) for the Newton-like subproblem on the current face:
+This routine approximately solves the quadratic model associated with the
+Newton–gradient direction restricted to the current face:
 
-    minimize  q(d) = ½ d' H d + g' d
-    subject to  ‖d‖ ≤ δ  and  l - x ≤ d ≤ u - x,
+    minimize   q(d) = ½ dᵀ H d + gᵀ d
+    subject to ‖d‖ ≤ δ   and   l - x ≤ d ≤ u - x,
 
-enforcing the generalized the angle condition:
+where the scalarized quantities are defined as the convex combinations
 
-    D(x,d) = max_j ∇f_j(x)' d  ≤  -Γ₁ ‖v_F(x)‖ ‖d‖.
+    g = ∑ⱼ λⱼ ∇fⱼ(x),     H = ∑ⱼ λⱼ ∇²fⱼ(x),
 
-This subroutine follows the implementation used in GENCAN’s `cgm`:
-it solves the quadratic model using a truncated CG strategy,
-with safeguards for small residuals, curvature breakdown, and slow progress.`                                                                                       `
+and the direction must satisfy the **angle condition**
 
-Inputs
-------
-- `JF`   : m×n matrix (rows = ∇fⱼ(x)ᵀ)
-- `H`   : n×n scalarized Hessian  ∑ λⱼ ∇²fⱼ(x)
-- `g`   : scalarized gradient  ∑ λⱼ ∇fⱼ(x)
-- `x,l,u`: current point and box bounds
-- `vSeucn`   : norm of the steepest-descent direction v_S(x)
-- `delta`: trust-region radius δ
-- `eps`  : residual tolerance
-- `maxit`: maximum CG iterations
+    D(x,d) = maxⱼ ∇fⱼ(x)ᵀ d  ≤  -Γ₁ ‖v_S(x)‖ ‖d‖ .
 
-Returns
--------
-Named tuple `(d, cginfo, iter)` where `cginfo` ∈ {1,…,8}:
+The problem is solved using a **truncated Conjugate Gradient (CG) strategy**
+with safeguards for:
 
-| Code | Meaning |
-|------|----------|
-| 1 | small residual (‖Hd+g‖ ≤ eps‖g‖) |
-| 2 | convergence to trust-region boundary (‖d‖ = δ) |
-| 3 | next CG iterate would violate the angle condition |
-| 4 | not enough progress in quadratic model |
-| 5 | box step would be too small (≤0.1) |
-| 6 | very similar consecutive iterates |
-| 7 | curvature breakdown (p' H p ≤ 0 after iter>0) |
-| 8 | too many iterations |
+  - small residuals,
+  - trust-region boundary,
+  - violation of the angle condition,
+  - very small box steps,
+  - lack of progress,
+  - curvature breakdown.
+
+--------------------------------------------------------------------------------
+**Function signature:**
+
+    truncatedCG!(d, n, m, vSeucn, delta, eps, maxit, x, l, u, JF, g, H)
+
+--------------------------------------------------------------------------------
+**In-place Input / Output:**
+
+    d      : Newton–gradient direction on the current face (overwritten in-place)
+
+--------------------------------------------------------------------------------
+**Read-only Input:**
+
+    n, m   : number of variables and objectives
+    vSeucn : ‖v_S(x)‖, Euclidean norm of the steepest descent direction
+    delta  : trust-region radius δ
+    eps    : residual tolerance
+    maxit  : maximum CG iterations
+
+    x      : current point
+    l, u   : lower and upper bounds
+    JF     : m×n Jacobian matrix (rows = ∇fⱼ(x)ᵀ)
+    g      : scalarized gradient  g = ∑ⱼ λⱼ ∇fⱼ(x)
+    H      : scalarized Hessian   H = ∑ⱼ λⱼ ∇²fⱼ(x)
+
+--------------------------------------------------------------------------------
+**Output:**
+
+    (cginfo, iter), where:
+
+        cginfo : termination flag of the truncated CG method
+
+            1  : small residual (‖H d + g‖ ≤ eps ‖g‖)
+            2  : convergence to trust-region boundary (‖d‖ = δ)
+            3  : violation of the angle condition
+            4  : box step too small
+            5  : lack of progress in the quadratic model
+            6  : very small consecutive CG steps
+            8  : curvature breakdown or maximum number of iterations
+
+        iter   : number of CG iterations performed
+        
+--------------------------------------------------------------------------------
 """
 function truncatedCG!(d::AbstractVector{T},
     n::Int, m::Int, vSeucn::T, delta::T, eps::T, maxit::Int,
@@ -68,7 +94,7 @@ function truncatedCG!(d::AbstractVector{T},
     cginfo   = -1
     iter     = 0
 
-    atol = -Γ1 * vSeucn
+    atol = -GAMMA1 * vSeucn
 
     while true
         # ====================================
@@ -181,9 +207,9 @@ function truncatedCG!(d::AbstractVector{T},
         # Lack of progress
         currprog = qprev - q
         bestprog = max(bestprog, currprog)
-        if currprog ≤ epsnqmp * bestprog
+        if currprog ≤ EPSNQMP * bestprog
             itnqmp += 1
-            if itnqmp ≥ maxcgitnp
+            if itnqmp ≥ MAXCGITNP
                 cginfo = 5; break
             end
         else

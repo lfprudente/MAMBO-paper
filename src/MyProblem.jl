@@ -1,15 +1,419 @@
-# ======================================================================
-# Inicialização do PROBLEMlema
-# ======================================================================
+"""
+--------------------------------------------------------------------------------
+inip — Problem initialization
+--------------------------------------------------------------------------------
 
-function inip(PROBLEM::String,SEED::Int)
-    rng = MersenneTwister(SEED)
+Initializes the dimensions, bounds, initial point and configuration flags
+for a selected test problem.
 
-    if PROBLEM == "AP1"
+The problem is selected by its string identifier `PROBLEM` and the initial
+point is generated using a pseudo-random seed.
+
+--------------------------------------------------------------------------------
+Inputs:
+
+    PROBLEM :: String   → Name of the test problem
+    SEED    :: Int      → Random seed for reproducibility
+
+--------------------------------------------------------------------------------
+Outputs:
+
+    n         :: Int        → Number of variables
+    m         :: Int        → Number of objective functions
+    x         :: Vector{T} → Initial point
+    l, u      :: Vector{T} → Lower and upper bounds
+    strconvex:: Vector{Bool} → Convexity flags of objectives
+    scaleF   :: Bool       → Enable/disable objective scaling
+    checkder :: Bool       → Enable/disable derivative checking
+
+--------------------------------------------------------------------------------
+"""
+function inip(PROBLEM::String; rng::AbstractRNG = Random.default_rng())
+
+    if PROBLEM == "F1"
+        # Number of variables and number of objective functions
+        n, m = 10, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l = fill(ZERO, n)
+        u = fill(ONE , n)
+        l[1] = T(1.0e-6)
+
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        strconvex = Bool[false, false]     # nonconvex / not convex in general
+        scaleF, checkder = true, false
+    
+    elseif PROBLEM == "F2"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = T(1.0e-6)
+        u[1] = ONE
+
+        for i in 2:n
+            l[i] = T(-1)
+            u[i] = T(1)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "F3"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = T(1.0e-6)
+        u[1] = ONE
+
+        for i in 2:n
+            l[i] = T(-1)
+            u[i] = T(1)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Objective scaling and derivative checking
+        strconvex = Bool[false, false]
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "F4"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = T(1.0e-6)
+        u[1] = ONE
+
+        for i in 2:n
+            l[i] = T(-1)
+            u[i] = T(1)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Objective scaling and derivative checking
+        strconvex = Bool[false, false]
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "F5"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = T(1.0e-6)
+        u[1] = ONE
+
+        for i in 2:n
+            l[i] = T(-1)
+            u[i] = T(1)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "F6"
+        # Number of variables and number of objective functions
+        n, m = 10, 3
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = ZERO
+        u[1] = ONE
+        l[2] = ZERO
+        u[2] = ONE
+
+        for i in 3:n
+            l[i] = T(-2)
+            u[i] = T( 2)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "F7"
+        # Number of variables and number of objective functions
+        n, m = 10, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l = fill(ZERO, n)
+        u = fill(ONE , n)
+        l[1] = T(1.0e-6)
+
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        strconvex = Bool[false, false]     # nonconvex / not convex in general
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "F8"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = fill(ZERO, n)
+        u = fill(ONE,  n)
+        l[1] = T(1.0e-6)
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+    
+    elseif PROBLEM == "F9"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = ZERO
+        u[1] = ONE
+
+        for i in 2:n
+            l[i] = T(-1)
+            u[i] = T(1)
+        end
+
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        strconvex = Bool[false, false]     # nonconvex / not convex in general
+        scaleF, checkder = true, false
+
+    
+
+    
+    
+    
+
+
+
+
+
+    
+    elseif PROBLEM == "CEC04"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = ZERO
+        u[1] = ONE
+
+        for i in 2:n
+            l[i] = T(-2)
+            u[i] = T( 2)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "CEC05"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = ZERO
+        u[1] = ONE
+
+        for i in 2:n
+            l[i] = T(-1)
+            u[i] = T( 1)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "CEC06"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = ZERO
+        u[1] = ONE
+        for i in 2:n
+            l[i] = T(-1)
+            u[i] = T( 1)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "CEC07"
+        # Number of variables and number of objective functions
+        n, m = 30, 2
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = ZERO
+        u[1] = ONE
+        for i in 2:n
+            l[i] = T(-1)
+            u[i] = T( 1)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+
+    
+
+    elseif PROBLEM == "CEC09"
+        # Number of variables and number of objective functions
+        n, m = 30, 3
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = ZERO
+        u[1] = ONE
+
+        # l[1] = T(1/4)
+        # u[1] = T(3/4)
+
+
+        l[2] = ZERO
+        u[2] = ONE
+
+        for i in 3:n
+            l[i] = T(-2)
+            u[i] = T( 2)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+
+    elseif PROBLEM == "CEC10"
+        # Number of variables and number of objective functions
+        n, m = 30, 3
+
+        # Lower and upper bounds
+        l = Vector{T}(undef, n)
+        u = Vector{T}(undef, n)
+
+        l[1] = ZERO
+        u[1] = ONE
+
+        l[2] = ZERO
+        u[2] = ONE
+
+        for i in 3:n
+            l[i] = T(-2)
+            u[i] = T( 2)
+        end
+
+        # Random initial point
+        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+
+        # Convexity information
+        strconvex = Bool[false, false, false]
+
+        # Objective scaling and derivative checking
+        scaleF, checkder = true, false
+
+
+
+
+
+
+
+
+
+
+
+    
+
+    elseif PROBLEM == "AP1"
         n, m = 2, 3
         l = fill(T(-1e1), n)
         u = fill(T( 1e1), n)
-        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i] - l[i]) * rand(rng,T) for i in 1:n]
         strconvex = Bool[false, true, true]
         scaleF, checkder = true, false
 
@@ -17,7 +421,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 1, 2
         l = fill(T(-1e2), n)
         u = fill(T( 1e2), n)
-        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i] - l[i]) * rand(rng,T) for i in 1:n]
         strconvex = Bool[true, true]
         scaleF, checkder = true, false
 
@@ -25,7 +429,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-1e2), n)
         u = fill(T( 1e2), n)
-        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i] - l[i]) * rand(rng,T) for i in 1:n]
         strconvex = Bool[false, false]
         scaleF, checkder = true, false
 
@@ -33,25 +437,17 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 3, 3
         l = fill(T(-1e1), n)
         u = fill(T( 1e1), n)
-        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i] - l[i]) * rand(rng,T) for i in 1:n]
         strconvex = Bool[false, true, true]
         scaleF, checkder = true, false
 
-    elseif PROBLEM == "BK1"
-        n, m = 2, 2
-        l = T[-5, -5]
-        u = T[10, 10]
-        x = [l[i] + (u[i] - l[i]) * rand(rng, T) for i in 1:n]
-        strconvex = Bool[true, true]
-        scaleF, checkder = true, false
-    
     elseif PROBLEM == "DD1"
         # Das & Dennis (1998)
         n, m = 5, 2
         l = fill(T(-20.0), n)
         u = fill(T( 20.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
-        x .= 10 * rand(rng, T) .* x ./ norm(x)
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
+        x .= 10 * rand(rng,T) .* x ./ norm(x)
         strconvex = Bool[true, false]
         scaleF, checkder = true, false
 
@@ -60,7 +456,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 1, 2
         l = T[-10.0]
         u = T[13.0]
-        x = [l[1] + (u[1]-l[1])*rand(rng, T)]
+        x = [l[1] + (u[1]-l[1])*rand(rng,T)]
         strconvex = Bool[false, false]
         scaleF, checkder = true, false
 
@@ -68,7 +464,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 1, 2
         l = T[-9.0]
         u = T[9.0]
-        x = [l[1] + (u[1]-l[1])*rand(rng, T)]
+        x = [l[1] + (u[1]-l[1])*rand(rng,T)]
         strconvex = Bool[true, true]
         scaleF, checkder = true, false
 
@@ -77,7 +473,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 3, 3
         l = fill(T(0.0), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -86,16 +482,16 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
     elseif PROBLEM == "FDS"
         # Newton’s Method for Multiobjective Optimization
-        n, m = 1000, 3
+        n, m = 200, 3
         l = fill(T(-2.0), n)
         u = fill(T( 2.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = trues(m)
         scaleF, checkder = true, false
 
@@ -104,7 +500,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -113,7 +509,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(0.0), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -122,7 +518,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 3
         l = fill(T(-50.0), n)
         u = fill(T( 50.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -131,25 +527,25 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = T[1.0, 1.0]
         u = T[4.0, 2.0]
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
     elseif PROBLEM == "JOS1"
         # Dynamic Weighted Aggregation for Evolutionary Multiobjective Optimization
-        n, m = 2, 2
+        n, m = 100, 2
         l = fill(T(-100.0), n)
         u = fill(T( 100.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = trues(m)
         scaleF, checkder = true, false
 
     elseif PROBLEM == "JOS4"
         # Newton’s Method for Multiobjective Optimization
-        n, m = 20, 2
+        n, m = 100, 2
         l = fill(T(1e-2), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -158,7 +554,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-3.0), n)
         u = fill(T( 3.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -167,7 +563,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-5.0), n)
         u = fill(T(10.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -176,7 +572,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-10.0), n)
         u = fill(T( 10.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = trues(m)
         scaleF, checkder = true, false
 
@@ -185,7 +581,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-0.75), n)
         u = fill(T( 0.75), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -194,7 +590,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-20.0), n)
         u = fill(T( 20.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = Bool[true, false]
         scaleF, checkder = true, false
 
@@ -203,7 +599,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-20.0), n)
         u = fill(T( 20.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = Bool[false, true]
         scaleF, checkder = true, false
 
@@ -212,7 +608,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 3, 2
         l = fill(T(-2.0), n)
         u = fill(T( 2.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -221,7 +617,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 6, 2
         l = T[0.1; fill(-0.16, 5)...]
         u = T[0.425; fill( 0.16, 5)...]
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -230,7 +626,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 3, 3
         l = fill(T(0.0), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -239,7 +635,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 3, 15
         l = fill(T(-2.0), n)
         u = fill(T( 2.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -248,7 +644,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 4, 5
         l = T[-25.0, -5.0, -5.0, -1.0]
         u = T[ 25.0,  5.0,  5.0,  1.0]
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -257,7 +653,7 @@ function inip(PROBLEM::String,SEED::Int)
         n = 4; m = n
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -266,7 +662,7 @@ function inip(PROBLEM::String,SEED::Int)
         n = 10; m = n
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -275,7 +671,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 3
         l = fill(T(0.0), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = trues(m)
         scaleF, checkder = true, false
 
@@ -283,7 +679,7 @@ function inip(PROBLEM::String,SEED::Int)
         # Review of Multiobjective Test PROBLEMs
         n, m = 1, 2
         l = T[0.0]; u = T[20.0]
-        x = [l[1] + (u[1]-l[1])*rand(rng, T)]
+        x = [l[1] + (u[1]-l[1])*rand(rng,T)]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -292,7 +688,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-100.0), n)
         u = fill(T( 100.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -301,7 +697,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = T[0.1, 0.0]
         u = T[1.0, 1.0]
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -309,7 +705,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -317,7 +713,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 3, 2
         l = fill(T(0.0), n)
         u = fill(T(4.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -325,7 +721,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -333,7 +729,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-π), n)
         u = fill(T( π), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = Bool[false, true]
         scaleF, checkder = true, false
 
@@ -341,7 +737,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 3
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -349,7 +745,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(0.0), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -357,7 +753,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 3
         l = fill(T(-400.0), n)
         u = fill(T( 400.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = trues(m)
         scaleF, checkder = true, false
 
@@ -365,15 +761,15 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-2.0), n)
         u = fill(T( 2.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = Bool[false, true]
         scaleF, checkder = true, false
 
     elseif PROBLEM == "QV1"
-        n, m = 10, 2
+        n, m = 100, 2
         l = fill(T(-5.0), n)
         u = fill(T( 5.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -381,7 +777,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 4, 2
         l = T[1.0, √2, √2, 1.0]
         u = T[3.0, 3.0, 3.0, 3.0]
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = Bool[false, true]
         scaleF, checkder = true, false
 
@@ -389,15 +785,15 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-1.5), n)
         u = fill(T( 1.5), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
     elseif PROBLEM == "SLCDT2"
-        n, m = 10, 3
+        n, m = 100, 3
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -405,7 +801,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-100.0), n)
         u = fill(T( 100.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = trues(m)
         scaleF, checkder = true, false
 
@@ -413,7 +809,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 1, 2
         l = T[-100.0]
         u = T[ 100.0]
-        x = [l[1] + (u[1]-l[1])*rand(rng, T)]
+        x = [l[1] + (u[1]-l[1])*rand(rng,T)]
         strconvex = Bool[false, true]
         scaleF, checkder = true, false
 
@@ -421,7 +817,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 1, 2
         l = T[-100.0]
         u = T[ 100.0]
-        x = [l[1] + (u[1]-l[1])*rand(rng, T)]
+        x = [l[1] + (u[1]-l[1])*rand(rng,T)]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -429,7 +825,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 4, 2
         l = fill(T(-10.0), n)
         u = fill(T( 10.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = Bool[true, false]
         scaleF, checkder = true, false
 
@@ -437,7 +833,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 4, 2
         l = T[0.1, 0.0, 0.0, 0.0]
         u = T[1.0, 1.0, 1.0, 1.0]
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -445,7 +841,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 4, 2
         l = fill(T(-2.0), n)
         u = fill(T( 5.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -453,7 +849,7 @@ function inip(PROBLEM::String,SEED::Int)
         n = 3; m = n
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -461,7 +857,7 @@ function inip(PROBLEM::String,SEED::Int)
         n = 4; m = n
         l = fill(T(-1.0), n)
         u = fill(T( 1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -469,7 +865,7 @@ function inip(PROBLEM::String,SEED::Int)
         n = 4; m = n - 1
         l = fill(T(-2.0), n)
         u = fill(T( 2.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -477,7 +873,7 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-3.0), n)
         u = fill(T( 3.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = Bool[false, true]
         scaleF, checkder = true, false
 
@@ -485,15 +881,15 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 2, 2
         l = fill(T(-3.0), n)
         u = fill(T( 3.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = Bool[false, true]
         scaleF, checkder = true, false
 
     elseif PROBLEM == "ZDT1"
         n, m = 30, 2
-        l = fill(T(1e-2), n)
+        l = fill(T(1e-6), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -501,23 +897,23 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 30, 2
         l = fill(T(0.0), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
     elseif PROBLEM == "ZDT3"
         n, m = 30, 2
-        l = fill(T(1e-2), n)
+        l = fill(T(1e-6), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
     elseif PROBLEM == "ZDT4"
-        n, m = 30, 2
-        l = [1e-2; fill(T(-5.0), n-1)...]
+        n, m = 10, 2
+        l = [T(1e-6); fill(T(-5.0), n-1)...]
         u = [1.0; fill(T(5.0), n-1)...]
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
@@ -525,19 +921,19 @@ function inip(PROBLEM::String,SEED::Int)
         n, m = 10, 2
         l = fill(T(0.0), n)
         u = fill(T(1.0), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = falses(m)
         scaleF, checkder = true, false
 
     elseif PROBLEM == "ZLT1"
-        n, m = 10, 5
+        n, m = 100, 5
         l = fill(T(-1e3), n)
         u = fill(T( 1e3), n)
-        x = [l[i] + (u[i]-l[i])*rand(rng, T) for i in 1:n]
+        x = [l[i] + (u[i]-l[i])*rand(rng,T) for i in 1:n]
         strconvex = trues(m)
         scaleF, checkder = true, false
     else
-        error("Unknown PROBLEM : $PROBLEM")
+        error("Unknown problem : $PROBLEM")
     end
 
     return n, m, x, l, u, strconvex, scaleF, checkder
@@ -546,11 +942,573 @@ end
 # ======================================================================
 # Função objetivo f_i(x)
 # ======================================================================
+"""
+--------------------------------------------------------------------------------
+evalf — Objective function evaluation
+--------------------------------------------------------------------------------
 
-function evalf(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
-    f = zero(T)
+Evaluates the objective function f_ind(x) for the currently selected problem
+stored in the global variable `PROBLEM`.
 
-    if PROBLEM == "AP1"
+--------------------------------------------------------------------------------
+Inputs:
+
+    ind :: Int        → Objective function index
+    x   :: Vector{T} → Current point
+    n   :: Int        → Number of variables
+
+--------------------------------------------------------------------------------
+Output:
+
+    f :: T  → Objective function value f_ind(x)
+
+--------------------------------------------------------------------------------
+"""
+function evalf(ind::Int, x::Vector{T}, n::Int) where {T<:AbstractFloat}
+
+    f = ZERO
+
+    if PROBLEM == "F1"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+        sum1 = ZERO
+        sum2 = ZERO
+
+        # Precompute the sums and cardinalities of J1 and J2
+        for j in 2:n
+            a = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))   # exponent a_j
+            y = x[j] - x1^a
+
+            if isodd(j)
+                J1 += 1
+                sum1 += y^2
+            else
+                J2 += 1
+                sum2 += y^2
+            end
+        end
+
+        if ind == 1
+            f = x1 + (T(2) / T(J1)) * sum1
+
+        elseif ind == 2
+            f = ONE - sqrt(x1) + (T(2) / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "F2"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            y = x[j] - sin(θ)
+
+            if isodd(j)
+                J1 += 1
+                sum1 += y^2
+            else
+                J2 += 1
+                sum2 += y^2
+            end
+        end
+
+        if ind == 1
+            f = x1 + (2 / T(J1)) * sum1
+
+        elseif ind == 2
+            f = 1 - sqrt(x1) + (2 / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "F3"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            θ = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+
+            if isodd(j)
+                y = x[j] - T(0.8) * x1 * cos(θ)
+                J1 += 1
+                sum1 += y^2
+            else
+                y = x[j] - T(0.8) * x1 * sin(θ)
+                J2 += 1
+                sum2 += y^2
+            end
+        end
+
+        if ind == 1
+            f = x1 + (T(2) / T(J1)) * sum1
+
+        elseif ind == 2
+            f = ONE - sqrt(x1) + (T(2) / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "F4"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            θ1 = (T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)) / T(3)
+            θ2 =  T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+
+            if isodd(j)
+                y = x[j] - T(0.8) * x1 * cos(θ1)
+                J1 += 1
+                sum1 += y^2
+            else
+                y = x[j] - T(0.8) * x1 * sin(θ2)
+                J2 += 1
+                sum2 += y^2
+            end
+        end
+
+        if ind == 1
+            f = x1 + (T(2) / T(J1)) * sum1
+
+        elseif ind == 2
+            f = ONE - sqrt(x1) + (T(2) / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "F5"
+
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            θ1 = 24*T(pi)*x1 + 4*T(j)*T(pi)/T(n)
+            θ2 =  6*T(pi)*x1 +     T(j)*T(pi)/T(n)
+
+            A = 0.3*x1^2 * cos(θ1) + 0.6*x1
+
+            if isodd(j)
+                y = x[j] - A * cos(θ2)
+                J1 += 1
+                sum1 += y^2
+            else
+                y = x[j] - A * sin(θ2)
+                J2 += 1
+                sum2 += y^2
+            end
+        end
+
+        if ind == 1
+            f = x1 + (2 / T(J1)) * sum1
+        elseif ind == 2
+            f = 1 - sqrt(x1) + (2 / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "F6"
+
+        x1 = x[1]
+        x2 = x[2]
+
+        c1 = cos(T(pi)/T(2) * x1)
+        s1 = sin(T(pi)/T(2) * x1)
+        c2 = cos(T(pi)/T(2) * x2)
+        s2 = sin(T(pi)/T(2) * x2)
+
+        J1 = 0
+        J2 = 0
+        J3 = 0
+
+        sum1 = ZERO
+        sum2 = ZERO
+        sum3 = ZERO
+
+        for j in 3:n
+            θ = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+
+            # Correct definition of y_j for F6 (UF8)
+            y = x[j] - T(2)*x2 * sin(θ)
+
+            r = mod(j-1, 3)
+
+            if r == 0
+                J1 += 1
+                sum1 += y^2
+            elseif r == 1
+                J2 += 1
+                sum2 += y^2
+            else
+                J3 += 1
+                sum3 += y^2
+            end
+        end
+
+        if ind == 1
+            f = c1*c2 + (T(2) / T(J1)) * sum1
+        elseif ind == 2
+            f = c1*s2 + (T(2) / T(J2)) * sum2
+        elseif ind == 3
+            f = s1 + (T(2) / T(J3)) * sum3
+        end
+
+    elseif PROBLEM == "F7"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            a  = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))
+            y  = x[j] - x1^a
+            φ  = T(4) * y^2 - cos(T(8) * T(pi) * y) + ONE
+
+            if isodd(j)
+                J1 += 1
+                sum1 += φ
+            else
+                J2 += 1
+                sum2 += φ
+            end
+        end
+
+        if ind == 1
+            f = x1 + (T(2) / T(J1)) * sum1
+
+        elseif ind == 2
+            f = ONE - sqrt(x1) + (T(2) / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "F8"
+
+        x1 = x[1]
+
+        # J1: odd indices 2..n, J2: even indices 2..n
+        J1 = 0
+        J2 = 0
+
+        S1 = ZERO
+        S2 = ZERO
+        P1 = ONE
+        P2 = ONE
+
+        for j in 2:n
+            # exponent alpha_j = 0.5 * (1 + 3*(j-2)/(n-2))
+            α = T(0.5) * (ONE + T(3) * (T(j-2) / T(n-2)))
+
+            x1α = x1^α
+            y   = x[j] - x1α
+
+            φ = 20*T(pi) * y / sqrt(T(j))
+            cφ = cos(φ)
+
+            if isodd(j)
+                J1 += 1
+                S1 += y^2
+                P1 *= cφ
+            else
+                J2 += 1
+                S2 += y^2
+                P2 *= cφ
+            end
+        end
+
+        if ind == 1
+            f = x1 + (2 / T(J1)) * (4*S1 - 2*P1 + 2)
+        elseif ind == 2
+            f = ONE - sqrt(x1) + (2 / T(J2)) * (4*S2 - 2*P2 + 2)
+        end
+    
+    elseif PROBLEM == "F9"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            θ = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+            y = x[j] - sin(θ)
+
+            if isodd(j)
+                J1 += 1
+                sum1 += y^2
+            else
+                J2 += 1
+                sum2 += y^2
+            end
+        end
+
+        if ind == 1
+            f = x1 + (T(2) / T(J1)) * sum1
+
+        elseif ind == 2
+            f = ONE - x1^2 + (T(2) / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "CEC04"
+
+        x1 = x[1]
+
+        J1 = 0
+        J2 = 0
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            y = x[j] - sin(θ)
+
+            a  = abs(y)
+            e2 = exp(T(2)*a)
+            h  = a / (ONE + e2)   # h(t) = |t| / (1 + e^{2|t|})
+
+            if isodd(j)
+                J1 += 1
+                sum1 += h
+            else
+                J2 += 1
+                sum2 += h
+            end
+        end
+
+        if ind == 1
+            f = x1 + (T(2) / T(J1)) * sum1
+        elseif ind == 2
+            f = ONE - x1^2 + (T(2) / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "CEC05"
+
+        x1 = x[1]
+
+        # Parameters of the central term
+        N   = T(10)
+        eps = T(0.1)
+        A   = inv(T(2)*N) + eps          # (1/(2N) + eps)
+
+        # Central term (same in f1 and f2)
+        s   = sin(T(2)*N*T(pi)*x1)
+        cterm = A * abs(s)
+
+        J1 = 0
+        J2 = 0
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+
+            y = x[j] - sin(θ)
+
+            # h(y) = 2 y^2 - cos(4π y) + 1
+            h = T(2)*y^2 - cos(T(4)*T(pi)*y) + ONE
+
+            if isodd(j)
+                J1 += 1
+                sum1 += h
+            else
+                J2 += 1
+                sum2 += h
+            end
+        end
+
+        if ind == 1
+            f = x1 + cterm + (T(2) / T(J1)) * sum1
+        elseif ind == 2
+            f = ONE - x1 + cterm + (T(2) / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "CEC06"
+
+        x1  = x[1]
+        N   = T(2)
+        eps = T(0.1)
+
+        # Central "jump" term: max{0, 2(1/(2N)+eps) * sin(2Nπx1)}
+        A     = T(2) * (inv(T(2)*N) + eps)
+        s2N   = sin(T(2)*N*T(pi)*x1)
+        inner = A * s2N
+        cterm = max(ZERO, inner)
+
+        J1 = 0
+        J2 = 0
+        sum1_y2 = ZERO
+        sum2_y2 = ZERO
+        P1 = ONE
+        P2 = ONE
+
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            y = x[j] - sin(θ)
+            β = T(20)*T(pi) / sqrt(T(j))
+
+            if isodd(j)
+                J1 += 1
+                sum1_y2 += y^2
+                P1 *= cos(β * y)
+            else
+                J2 += 1
+                sum2_y2 += y^2
+                P2 *= cos(β * y)
+            end
+        end
+
+        if ind == 1
+            G1 = T(4)*sum1_y2 - T(2)*P1 + T(2)
+            f  = x1 + cterm + (T(2) / T(J1)) * G1
+        elseif ind == 2
+            G2 = T(4)*sum2_y2 - T(2)*P2 + T(2)
+            f  = ONE - x1 + cterm + (T(2) / T(J2)) * G2
+        end
+
+    elseif PROBLEM == "CEC07"
+
+        x1 = x[1]
+
+        x1p = x1^(T(1)/T(5))   # x1^(1/5)
+
+        # Count indices in J1 and J2
+        J1 = 0
+        J2 = 0
+        for j in 2:n
+            isodd(j) ? (J1 += 1) : (J2 += 1)
+        end
+
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            y = x[j] - sin(θ)
+
+            if isodd(j)
+                sum1 += y^2
+            else
+                sum2 += y^2
+            end
+        end
+
+        if ind == 1
+            f = x1p + (T(2) / T(J1)) * sum1
+        elseif ind == 2
+            f = ONE - x1p + (T(2) / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "CEC09"
+
+        x1 = x[1]
+        x2 = x[2]
+
+        eps = T(0.1)
+
+        g0 = (ONE + eps) * (ONE - T(4)*(T(2)*x1 - ONE)^2)
+        g  = max(ZERO, g0)
+
+        J1 = 0
+        J2 = 0
+        J3 = 0
+
+        sum1 = ZERO
+        sum2 = ZERO
+        sum3 = ZERO
+
+        for j in 3:n
+            θ = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+            y = x[j] - T(2)*x2*sin(θ)
+
+            r = mod(j-1, 3)
+
+            if r == 0
+                J1 += 1
+                sum1 += y^2
+            elseif r == 1
+                J2 += 1
+                sum2 += y^2
+            else
+                J3 += 1
+                sum3 += y^2
+            end
+        end
+
+        if ind == 1
+            f = T(0.5)*(g + T(2)*x1)*x2 + (T(2)/T(J1))*sum1
+        elseif ind == 2
+            f = T(0.5)*(g - T(2)*x1 + T(2))*x2 + (T(2)/T(J2))*sum2
+        elseif ind == 3
+            f = ONE - x2 + (T(2)/T(J3))*sum3
+        end
+
+    elseif PROBLEM == "CEC10"
+
+        x1 = x[1]
+        x2 = x[2]
+
+        # Trigonometric terms of the front
+        c1 = cos(T(pi)/T(2) * x1)
+        s1 = sin(T(pi)/T(2) * x1)
+        c2 = cos(T(pi)/T(2) * x2)
+        s2 = sin(T(pi)/T(2) * x2)
+
+        J1 = 0
+        J2 = 0
+        J3 = 0
+
+        sum1 = ZERO
+        sum2 = ZERO
+        sum3 = ZERO
+
+        for j in 3:n
+            θ  = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+            sθ = sin(θ)
+
+            # y_j = x_j - 2 x2 sin(2π x1 + jπ/n)
+            y = x[j] - T(2)*x2*sθ
+
+            # h(y) = 4 y^2 - cos(8π y) + 1
+            h = T(4)*y^2 - cos(T(8)*T(pi)*y) + ONE
+
+            r = mod(j-1, 3)
+
+            if r == 0
+                J1 += 1
+                sum1 += h
+            elseif r == 1
+                J2 += 1
+                sum2 += h
+            else
+                J3 += 1
+                sum3 += h
+            end
+        end
+
+        if ind == 1
+            f = c1*c2 + (T(2) / T(J1)) * sum1
+        elseif ind == 2
+            f = c1*s2 + (T(2) / T(J2)) * sum2
+        elseif ind == 3
+            f = s1     + (T(2) / T(J3)) * sum3
+        end
+
+
+
+
+
+
+
+    
+    
+
+
+
+
+    elseif PROBLEM == "AP1"
         if ind == 1
             f = 0.25T((x[1]-1)^4 + 2*(x[2]-2)^4)
         elseif ind == 2
@@ -661,9 +1619,6 @@ function evalf(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
         elseif ind == 2
             f = x[1] * (1 - x[2]) + 5
         end
-
-    elseif PROBLEM == "BK1"
-        f = ind == 1 ? x[1]^2 + x[2]^2 : (x[1]-5)^2 + (x[2]-5)^2
 
     elseif PROBLEM == "JOS1"
         if ind == 1
@@ -1063,7 +2018,7 @@ function evalf(n::Int, x::Vector{T}, ind::Int) where {T<:AbstractFloat}
         f = (x[ind] - 1.0)^2 + sum(x[i]^2 for i in 1:n if i != ind)
 
     else
-        error("Unknown PROBLEM : $PROBLEM")
+        error("Unknown problem : $PROBLEM")
     end
 
     return f
@@ -1072,12 +2027,1042 @@ end
 # ======================================================================
 # Gradiente ∇f_i(x)
 # ======================================================================
+"""
+--------------------------------------------------------------------------------
+evalg! — Gradient evaluation (in-place)
+--------------------------------------------------------------------------------
 
-function evalg!(n::Int, x::Vector{T}, g::Vector{T}, ind::Int) where {T<:AbstractFloat}
+Computes the gradient ∇f_ind(x) of the selected objective function and stores
+the result in-place in the vector `g`.
 
-    g .= zeros(T, n)
+--------------------------------------------------------------------------------
+Inputs:
 
-    if PROBLEM == "AP1"
+    ind :: Int        → Objective function index
+    x   :: Vector{T} → Current point
+    n   :: Int        → Number of variables
+
+--------------------------------------------------------------------------------
+In-place Output:
+
+    g :: Vector{T}   → Gradient ∇f_ind(x)
+
+--------------------------------------------------------------------------------
+"""
+function evalg!(g::Vector{T}, ind::Int, x::Vector{T}, n::Int) where {T<:AbstractFloat}
+
+    fill!(g, ZERO)
+
+    if PROBLEM == "F1"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        # First pass: count J1 and J2
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            # f1 = x1 + (2/J1) * Σ_{j odd} y_j^2,   y_j = x_j - x1^a_j
+            acc = ZERO  # accumulates Σ a_j * y_j * x1^(a_j-1)
+
+            for j in 2:n
+                if isodd(j)
+                    a  = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))
+                    xa = x1^a
+                    y  = x[j] - xa
+
+                    # ∂f1/∂xj = (4/J1) * y
+                    g[j] = (T(4) / T(J1)) * y
+
+                    # contribution to ∂f1/∂x1 from this j:
+                    # dy/dx1 = -a*x1^(a-1)
+                    acc += a * y * x1^(a - ONE)
+                end
+            end
+
+            # ∂f1/∂x1 = 1 + (2/J1)*Σ 2y * dy/dx1 = 1 - (4/J1)*Σ a*y*x1^(a-1)
+            g[1] = ONE - (T(4) / T(J1)) * acc
+
+        elseif ind == 2
+            # f2 = 1 - sqrt(x1) + (2/J2) * Σ_{j even} y_j^2
+            acc = ZERO
+
+            for j in 2:n
+                if iseven(j)
+                    a  = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))
+                    xa = x1^a
+                    y  = x[j] - xa
+
+                    g[j] = (T(4) / T(J2)) * y
+                    acc += a * y * x1^(a - ONE)
+                end
+            end
+
+            # derivative of 1 - sqrt(x1)
+            g[1] = -inv(T(2) * sqrt(x1)) - (T(4) / T(J2)) * acc
+        end
+
+    elseif PROBLEM == "F2"
+
+        x1 = x[1]
+        sum1 = ZERO
+        sum2 = ZERO
+        J1 = 0
+        J2 = 0
+
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            y = x[j] - sin(θ)
+            c = cos(θ)
+
+            if isodd(j)
+                J1 += 1
+                if ind == 1
+                    sum1 += y * c
+                end
+            else
+                J2 += 1
+                if ind == 2
+                    sum2 += y * c
+                end
+            end
+        end
+
+        if ind == 1
+            g[1] = 1 - (24*T(pi)/T(J1)) * sum1
+        elseif ind == 2
+            g[1] = -inv(2*sqrt(x1)) - (24*T(pi)/T(J2)) * sum2
+        end
+
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            y = x[j] - sin(θ)
+
+            if ind == 1 && isodd(j)
+                g[j] = (4 / T(J1)) * y
+            elseif ind == 2 && iseven(j)
+                g[j] = (4 / T(J2)) * y
+            end
+        end
+
+    elseif PROBLEM == "F3"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        # Count J1 and J2
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            acc = ZERO   # accumulator for ∂f/∂x1 contributions
+
+            for j in 2:n
+                θ = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+
+                if isodd(j)
+                    y = x[j] - T(0.8) * x1 * cos(θ)
+
+                    # ∂f/∂xj
+                    g[j] = (T(4) / T(J1)) * y
+
+                    # dy/dx1 = -0.8*cos(θ) + 0.8*x1*sin(θ)*6π
+                    dy1 = -T(0.8) * cos(θ) + T(0.8) * x1 * sin(θ) * T(6) * T(pi)
+
+                    acc += y * dy1
+                end
+            end
+
+            # ∂f/∂x1
+            g[1] = ONE + (T(4) / T(J1)) * acc
+
+        elseif ind == 2
+            acc = ZERO
+
+            for j in 2:n
+                θ = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+
+                if iseven(j)
+                    y = x[j] - T(0.8) * x1 * sin(θ)
+
+                    g[j] = (T(4) / T(J2)) * y
+
+                    # dy/dx1 = -0.8*sin(θ) - 0.8*x1*cos(θ)*6π
+                    dy1 = -T(0.8) * sin(θ) - T(0.8) * x1 * cos(θ) * T(6) * T(pi)
+
+                    acc += y * dy1
+                end
+            end
+
+            # derivative of 1 - sqrt(x1)
+            g[1] = -inv(T(2) * sqrt(x1)) + (T(4) / T(J2)) * acc
+        end
+    
+    elseif PROBLEM == "F4"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            acc = ZERO
+
+            for j in 2:n
+                if isodd(j)
+                    θ1 = (T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)) / T(3)
+                    y  = x[j] - T(0.8) * x1 * cos(θ1)
+
+                    # ∂f/∂xj
+                    g[j] = (T(4) / T(J1)) * y
+
+                    # dy/dx1 = -0.8*cos(θ1) + 0.8*x1*sin(θ1)*(6π/3)
+                    dy1 = -T(0.8) * cos(θ1) +
+                        T(0.8) * x1 * sin(θ1) * (T(6) * T(pi) / T(3))
+
+                    acc += y * dy1
+                end
+            end
+
+            g[1] = ONE + (T(4) / T(J1)) * acc
+
+        elseif ind == 2
+            acc = ZERO
+
+            for j in 2:n
+                if iseven(j)
+                    θ2 = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+                    y  = x[j] - T(0.8) * x1 * sin(θ2)
+
+                    g[j] = (T(4) / T(J2)) * y
+
+                    # dy/dx1 = -0.8*sin(θ2) - 0.8*x1*cos(θ2)*6π
+                    dy1 = -T(0.8) * sin(θ2) -
+                        T(0.8) * x1 * cos(θ2) * T(6) * T(pi)
+
+                    acc += y * dy1
+                end
+            end
+
+            g[1] = -inv(T(2) * sqrt(x1)) + (T(4) / T(J2)) * acc
+        end
+
+    elseif PROBLEM == "F5"
+
+        x1 = x[1]
+
+        J1 = 0
+        J2 = 0
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        sum1 = ZERO
+        sum2 = ZERO
+
+        for j in 2:n
+            θ1 = 24*T(pi)*x1 + 4*T(j)*T(pi)/T(n)
+            θ2 =  6*T(pi)*x1 +     T(j)*T(pi)/T(n)
+
+            A  = 0.3*x1^2 * cos(θ1) + 0.6*x1
+            dA = 0.6*x1 * cos(θ1) - 7.2*T(pi)*x1^2 * sin(θ1) + 0.6
+
+            if isodd(j)
+                y  = x[j] - A * cos(θ2)
+                dy = -dA * cos(θ2) + 6*T(pi)*A * sin(θ2)
+
+                if ind == 1
+                    sum1 += y * dy
+                    g[j]  = (4 / T(J1)) * y
+                end
+            else
+                y  = x[j] - A * sin(θ2)
+                dy = -dA * sin(θ2) - 6*T(pi)*A * cos(θ2)
+
+                if ind == 2
+                    sum2 += y * dy
+                    g[j]  = (4 / T(J2)) * y
+                end
+            end
+        end
+
+        if ind == 1
+            g[1] = 1 + (4 / T(J1)) * sum1
+        elseif ind == 2
+            g[1] = -inv(2*sqrt(x1)) + (4 / T(J2)) * sum2
+        end
+
+    elseif PROBLEM == "F6"
+
+        x1 = x[1]
+        x2 = x[2]
+
+        # Trigonometric terms of the front
+        c1 = cos(T(pi)/T(2) * x1)
+        s1 = sin(T(pi)/T(2) * x1)
+        c2 = cos(T(pi)/T(2) * x2)
+        s2 = sin(T(pi)/T(2) * x2)
+
+        dc1 = -T(pi)/T(2) * s1
+        ds1 =  T(pi)/T(2) * c1
+        dc2 = -T(pi)/T(2) * s2
+        ds2 =  T(pi)/T(2) * c2
+
+        # Count indices in J1, J2, J3
+        J1 = 0
+        J2 = 0
+        J3 = 0
+        for j in 3:n
+            r = mod(j-1, 3)
+            r == 0 ? (J1 += 1) : (r == 1 ? (J2 += 1) : (J3 += 1))
+        end
+
+        sumx1 = ZERO
+        sumx2 = ZERO
+
+        for j in 3:n
+            θ  = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+            sθ = sin(θ)
+            cθ = cos(θ)
+
+            # Correct y_j
+            y = x[j] - T(2)*x2*sθ
+
+            # First derivatives of y_j
+            dy_dx1 = -T(4)*T(pi)*x2*cθ
+            dy_dx2 = -T(2)*sθ
+
+            r = mod(j-1, 3)
+
+            if ind == 1 && r == 0
+                g[j] = (T(4) / T(J1)) * y
+                sumx1 += T(2) * y * dy_dx1
+                sumx2 += T(2) * y * dy_dx2
+
+            elseif ind == 2 && r == 1
+                g[j] = (T(4) / T(J2)) * y
+                sumx1 += T(2) * y * dy_dx1
+                sumx2 += T(2) * y * dy_dx2
+
+            elseif ind == 3 && r == 2
+                g[j] = (T(4) / T(J3)) * y
+                sumx1 += T(2) * y * dy_dx1
+                sumx2 += T(2) * y * dy_dx2
+            end
+        end
+
+        if ind == 1
+            g[1] = dc1*c2 + (T(2) / T(J1)) * sumx1
+            g[2] = c1*dc2 + (T(2) / T(J1)) * sumx2
+
+        elseif ind == 2
+            g[1] = dc1*s2 + (T(2) / T(J2)) * sumx1
+            g[2] = c1*ds2 + (T(2) / T(J2)) * sumx2
+
+        elseif ind == 3
+            g[1] = ds1 + (T(2) / T(J3)) * sumx1
+            g[2] = (T(2) / T(J3)) * sumx2
+        end
+
+    elseif PROBLEM == "F7"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            acc = ZERO
+
+            for j in 2:n
+                if isodd(j)
+                    a  = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))
+                    xa = x1^a
+                    y  = x[j] - xa
+
+                    # dφ/dy = 8y + 8π sin(8πy)
+                    dφ = T(8) * y + T(8) * T(pi) * sin(T(8) * T(pi) * y)
+
+                    # ∂f/∂xj
+                    g[j] = (T(2) / T(J1)) * dφ
+
+                    # dy/dx1 = -a*x1^(a-1)
+                    acc += dφ * (-a * x1^(a - ONE))
+                end
+            end
+
+            g[1] = ONE + (T(2) / T(J1)) * acc
+
+        elseif ind == 2
+            acc = ZERO
+
+            for j in 2:n
+                if iseven(j)
+                    a  = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))
+                    xa = x1^a
+                    y  = x[j] - xa
+
+                    dφ = T(8) * y + T(8) * T(pi) * sin(T(8) * T(pi) * y)
+
+                    g[j] = (T(2) / T(J2)) * dφ
+                    acc += dφ * (-a * x1^(a - ONE))
+                end
+            end
+
+            g[1] = -inv(T(2) * sqrt(x1)) + (T(2) / T(J2)) * acc
+        end
+
+    elseif PROBLEM == "F8"
+
+        x1 = x[1]
+
+        # First pass: counts and precomputations
+        J1 = 0
+        J2 = 0
+
+        # Pre-allocated arrays (only indices 2..n are used)
+        y    = Vector{T}(undef, n)
+        dy1  = Vector{T}(undef, n)   # dy/dx1
+        φ    = Vector{T}(undef, n)
+        tanφ = Vector{T}(undef, n)
+        cosφ = Vector{T}(undef, n)
+
+        S1 = ZERO
+        S2 = ZERO
+        P1 = ONE
+        P2 = ONE
+
+        sum_y_dy1_J1 = ZERO   # Σ (y_j * dy_j/dx1) for j in J1
+        sum_y_dy1_J2 = ZERO   # Σ (y_j * dy_j/dx1) for j in J2
+        sum_A1       = ZERO   # Σ ( -tanφ_j * φ'_j(x1) ) for j in J1
+        sum_A2       = ZERO   # Σ ( -tanφ_j * φ'_j(x1) ) for j in J2
+
+        for j in 2:n
+            # alpha_j
+            α = T(0.5) * (ONE + T(3) * (T(j-2) / T(n-2)))
+
+            x1α = x1^α
+            yj  = x[j] - x1α
+
+            # dy/dx1 = -α * x1^(α-1)
+            dy1j = -α * x1^(α - ONE)
+
+            φj   = 20*T(pi) * yj / sqrt(T(j))
+            cφj  = cos(φj)
+            sφj  = sin(φj)
+            tφj  = sφj / cφj
+
+            # φ'(x1) = 20π / sqrt(j) * dy/dx1
+            φ1j = 20*T(pi) / sqrt(T(j)) * dy1j
+
+            y[j]    = yj
+            dy1[j]  = dy1j
+            φ[j]    = φj
+            tanφ[j] = tφj
+            cosφ[j] = cφj
+
+            if isodd(j)
+                J1 += 1
+                S1 += yj^2
+                P1 *= cφj
+
+                sum_y_dy1_J1 += yj * dy1j
+                sum_A1       += -tφj * φ1j
+            else
+                J2 += 1
+                S2 += yj^2
+                P2 *= cφj
+
+                sum_y_dy1_J2 += yj * dy1j
+                sum_A2       += -tφj * φ1j
+            end
+        end
+
+        # Gradients
+
+        if ind == 1
+            c1 = 2 / T(J1)
+
+            # derivative w.r.t x1
+            dS1_dx1 = 2 * sum_y_dy1_J1         # Σ 2 y_j dy_j/dx1
+            dP1_dx1 = P1 * sum_A1
+
+            g[1] = ONE + c1 * (4*dS1_dx1 - 2*dP1_dx1)
+
+            # derivatives w.r.t x_j, j in J1
+            for j in 2:n
+                if isodd(j)
+                    yj = y[j]
+
+                    # dS1/dxj = 2 yj
+                    dS1_dxj = 2 * yj
+
+                    # φ'_j(xj) = 20π / sqrt(j) * dy/dxj, and dy/dxj = 1
+                    φj_xj   = 20*T(pi) / sqrt(T(j))
+                    dP1_dxj = P1 * (-tanφ[j] * φj_xj)
+
+                    g[j] = c1 * (4*dS1_dxj - 2*dP1_dxj)
+                end
+            end
+
+        elseif ind == 2
+            c2 = 2 / T(J2)
+
+            # derivative w.r.t x1
+            dS2_dx1 = 2 * sum_y_dy1_J2
+            dP2_dx1 = P2 * sum_A2
+
+            g[1] = -T(0.5) / sqrt(x1) + c2 * (4*dS2_dx1 - 2*dP2_dx1)
+
+            # derivatives w.r.t x_j, j in J2
+            for j in 2:n
+                if iseven(j)
+                    yj = y[j]
+
+                    dS2_dxj = 2 * yj
+
+                    φj_xj   = 20*T(pi) / sqrt(T(j))
+                    dP2_dxj = P2 * (-tanφ[j] * φj_xj)
+
+                    g[j] = c2 * (4*dS2_dxj - 2*dP2_dxj)
+                end
+            end
+        end
+    
+    elseif PROBLEM == "F9"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            acc = ZERO
+
+            for j in 2:n
+                if isodd(j)
+                    θ  = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+                    y  = x[j] - sin(θ)
+
+                    # ∂f/∂xj
+                    g[j] = (T(4) / T(J1)) * y
+
+                    # dy/dx1 = -cos(θ) * dθ/dx1 = -cos(θ) * 6π
+                    dy1 = -cos(θ) * T(6) * T(pi)
+                    acc += y * dy1
+                end
+            end
+
+            # ∂f/∂x1 = 1 + (4/J1) Σ y * dy/dx1
+            g[1] = ONE + (T(4) / T(J1)) * acc
+
+        elseif ind == 2
+            acc = ZERO
+
+            for j in 2:n
+                if iseven(j)
+                    θ  = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+                    y  = x[j] - sin(θ)
+
+                    g[j] = (T(4) / T(J2)) * y
+
+                    dy1 = -cos(θ) * T(6) * T(pi)
+                    acc += y * dy1
+                end
+            end
+
+            # derivative of 1 - x1^2 is -2x1
+            g[1] = -T(2) * x1 + (T(4) / T(J2)) * acc
+        end
+    
+    elseif PROBLEM == "CEC04"
+
+        x1 = x[1]
+
+        # First pass: correct counts for J1 and J2
+        J1 = 0
+        J2 = 0
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        sum1x1 = ZERO   # Σ_{j∈J1} h'(y_j) * dy_j/dx1
+        sum2x1 = ZERO   # Σ_{j∈J2} h'(y_j) * dy_j/dx1
+
+        # Second pass: contributions to gradient
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            cθ = cos(θ)
+
+            y = x[j] - sin(θ)
+            a = abs(y)
+
+            e2   = exp(T(2)*a)
+            den  = ONE + e2
+            dhda = (den - T(2)*a*e2) / (den*den)   # dh/da
+            sgn  = sign(y)
+            hprime = sgn * dhda                    # dh/dt
+
+            dy_dx1 = -T(6)*T(pi)*cθ                # dy/dx1
+
+            if isodd(j)
+                if ind == 1
+                    # derivative w.r.t x1
+                    sum1x1 += hprime * dy_dx1
+                    # derivative w.r.t x_j
+                    g[j] = (T(2) / T(J1)) * hprime   # dy/dxj = 1
+                end
+            else
+                if ind == 2
+                    # derivative w.r.t x1
+                    sum2x1 += hprime * dy_dx1
+                    # derivative w.r.t x_j
+                    g[j] = (T(2) / T(J2)) * hprime   # dy/dxj = 1
+                end
+            end
+        end
+
+        if ind == 1
+            g[1] = ONE + (T(2) / T(J1)) * sum1x1
+        elseif ind == 2
+            g[1] = -T(2)*x1 + (T(2) / T(J2)) * sum2x1
+        end
+
+    elseif PROBLEM == "CEC05"
+
+        x1 = x[1]
+
+        # Parameters of the central term
+        N   = T(10)
+        eps = T(0.1)
+        A   = inv(T(2)*N) + eps          # (1/(2N) + eps)
+
+        # Central term derivative w.r.t x1
+        s    = sin(T(2)*N*T(pi)*x1)
+        c2N  = cos(T(2)*N*T(pi)*x1)
+        dcterm_dx1 = A * T(2)*N*T(pi) * sign(s) * c2N
+
+        # First pass: correct counts of J1 and J2
+        J1 = 0
+        J2 = 0
+        for j in 2:n
+            isodd(j) ? (J1 += 1) : (J2 += 1)
+        end
+
+        sum1x1 = ZERO
+        sum2x1 = ZERO
+
+        for j in 2:n
+            θ  = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            cθ = cos(θ)
+
+            y = x[j] - sin(θ)
+
+            # h'(y) = 4y + 4π sin(4π y)
+            dhdy = T(4)*y + T(4)*T(pi)*sin(T(4)*T(pi)*y)
+
+            dy_dx1 = -T(6)*T(pi)*cθ
+
+            if isodd(j)
+                if ind == 1
+                    sum1x1 += dhdy * dy_dx1
+                    g[j] = (T(2) / T(J1)) * dhdy
+                end
+            else
+                if ind == 2
+                    sum2x1 += dhdy * dy_dx1
+                    g[j] = (T(2) / T(J2)) * dhdy
+                end
+            end
+        end
+
+        if ind == 1
+            g[1] = ONE + dcterm_dx1 + (T(2) / T(J1)) * sum1x1
+        elseif ind == 2
+            g[1] = -ONE + dcterm_dx1 + (T(2) / T(J2)) * sum2x1
+        end
+
+    elseif PROBLEM == "CEC06"
+
+        x1  = x[1]
+        N   = T(2)
+        eps = T(0.1)
+
+        # Central "jump" term derivative w.r.t x1
+        A     = T(2) * (inv(T(2)*N) + eps)
+        s2N   = sin(T(2)*N*T(pi)*x1)
+        c2N   = cos(T(2)*N*T(pi)*x1)
+        inner = A * s2N
+
+        dcterm_dx1 = inner > ZERO ? A * T(2)*N*T(pi) * c2N : ZERO
+
+        # First pass: classify indices and prepare data
+        J1 = 0
+        J2 = 0
+        for j in 2:n
+            isodd(j) ? (J1 += 1) : (J2 += 1)
+        end
+
+        ys      = Vector{T}(undef, n)
+        betas   = Vector{T}(undef, n)
+        cosθs   = Vector{T}(undef, n)
+        isJ1    = falses(n)
+        isJ2    = falses(n)
+
+        P1 = ONE
+        P2 = ONE
+
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            cθ = cos(θ)
+
+            y = x[j] - sin(θ)
+            β = T(20)*T(pi) / sqrt(T(j))
+
+            ys[j]    = y
+            betas[j] = β
+            cosθs[j] = cθ
+
+            if isodd(j)
+                isJ1[j] = true
+                P1 *= cos(β * y)
+            else
+                isJ2[j] = true
+                P2 *= cos(β * y)
+            end
+        end
+
+        sum1x1 = ZERO
+        sum2x1 = ZERO
+
+        if ind == 1
+            for j in 2:n
+                if isJ1[j]
+                    y  = ys[j]
+                    β  = betas[j]
+                    cθ = cosθs[j]
+
+                    # dG/dy_j for the UF3-type term
+                    t     = β * y
+                    tan_t = tan(t)
+                    dGdy  = T(8)*y + T(2)*P1*β*tan_t
+
+                    # dy_j/dx1
+                    dy_dx1 = -T(6)*T(pi)*cθ
+
+                    # contribution to gradient
+                    g[j] = (T(2) / T(J1)) * dGdy
+                    sum1x1 += dGdy * dy_dx1
+                end
+            end
+
+            g[1] = ONE + dcterm_dx1 + (T(2) / T(J1)) * sum1x1
+
+        elseif ind == 2
+            for j in 2:n
+                if isJ2[j]
+                    y  = ys[j]
+                    β  = betas[j]
+                    cθ = cosθs[j]
+
+                    t     = β * y
+                    tan_t = tan(t)
+                    dGdy  = T(8)*y + T(2)*P2*β*tan_t
+
+                    dy_dx1 = -T(6)*T(pi)*cθ
+
+                    g[j] = (T(2) / T(J2)) * dGdy
+                    sum2x1 += dGdy * dy_dx1
+                end
+            end
+
+            g[1] = -ONE + dcterm_dx1 + (T(2) / T(J2)) * sum2x1
+        end
+
+    elseif PROBLEM == "CEC07"
+
+        x1 = x[1]
+
+        dx1p = (T(1)/T(5)) * x1^(-T(4)/T(5))   # derivative of x1^(1/5)
+
+        # Count indices in J1 and J2
+        J1 = 0
+        J2 = 0
+        for j in 2:n
+            isodd(j) ? (J1 += 1) : (J2 += 1)
+        end
+
+        if ind == 1
+            sum1x1 = ZERO
+
+            for j in 2:n
+                θ  = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+                cθ = cos(θ)
+                sθ = sin(θ)
+
+                y = x[j] - sθ
+
+                if isodd(j)
+                    # ∂f1/∂xj
+                    g[j] = (T(4) / T(J1)) * y
+
+                    # dyj/dx1
+                    dy_dx1 = -T(6)*T(pi)*cθ
+
+                    # Contribution to ∂f1/∂x1
+                    sum1x1 += T(2) * y * dy_dx1
+                end
+            end
+
+            g[1] = dx1p + (T(2) / T(J1)) * sum1x1
+
+        elseif ind == 2
+            sum2x1 = ZERO
+
+            for j in 2:n
+                θ  = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+                cθ = cos(θ)
+                sθ = sin(θ)
+
+                y = x[j] - sθ
+
+                if iseven(j)
+                    # ∂f2/∂xj
+                    g[j] = (T(4) / T(J2)) * y
+
+                    dy_dx1 = -T(6)*T(pi)*cθ
+
+                    sum2x1 += T(2) * y * dy_dx1
+                end
+            end
+
+            g[1] = -dx1p + (T(2) / T(J2)) * sum2x1
+        end
+
+    elseif PROBLEM == "CEC09"
+
+        x1 = x[1]
+        x2 = x[2]
+
+        eps = T(0.1)
+
+        z  = T(2)*x1 - ONE
+        g0 = (ONE + eps) * (ONE - T(4)*z^2)
+
+        active = g0 > ZERO
+
+        dg_dx1 = active ? (ONE + eps)*(-T(16)*z) : ZERO
+
+        J1 = 0; J2 = 0; J3 = 0
+        for j in 3:n
+            r = mod(j-1, 3)
+            r == 0 ? (J1 += 1) : (r == 1 ? (J2 += 1) : (J3 += 1))
+        end
+
+        sumx1 = ZERO
+        sumx2 = ZERO
+
+        for j in 3:n
+            θ  = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+            sθ = sin(θ)
+            cθ = cos(θ)
+
+            y = x[j] - T(2)*x2*sθ
+
+            dy_dx1 = -T(4)*T(pi)*x2*cθ
+            dy_dx2 = -T(2)*sθ
+
+            r = mod(j-1, 3)
+
+            if ind == 1 && r == 0
+                g[j] = (T(4)/T(J1))*y
+                sumx1 += T(2)*y*dy_dx1
+                sumx2 += T(2)*y*dy_dx2
+
+            elseif ind == 2 && r == 1
+                g[j] = (T(4)/T(J2))*y
+                sumx1 += T(2)*y*dy_dx1
+                sumx2 += T(2)*y*dy_dx2
+
+            elseif ind == 3 && r == 2
+                g[j] = (T(4)/T(J3))*y
+                sumx1 += T(2)*y*dy_dx1
+                sumx2 += T(2)*y*dy_dx2
+            end
+        end
+
+        if ind == 1
+            g[1] = T(0.5)*(dg_dx1 + T(2))*x2 + (T(2)/T(J1))*sumx1
+            g[2] = T(0.5)*(active ? g0 + T(2)*x1 : T(2)*x1) + (T(2)/T(J1))*sumx2
+
+        elseif ind == 2
+            g[1] = T(0.5)*(dg_dx1 - T(2))*x2 + (T(2)/T(J2))*sumx1
+            g[2] = T(0.5)*(active ? g0 - T(2)*x1 + T(2) : -T(2)*x1 + T(2)) + (T(2)/T(J2))*sumx2
+
+        elseif ind == 3
+            g[2] = -ONE + (T(2)/T(J3))*sumx2
+            g[1] = (T(2)/T(J3))*sumx1
+        end
+
+    elseif PROBLEM == "CEC10"
+
+        x1 = x[1]
+        x2 = x[2]
+
+        # Front trigonometric terms
+        c1 = cos(T(pi)/T(2) * x1)
+        s1 = sin(T(pi)/T(2) * x1)
+        c2 = cos(T(pi)/T(2) * x2)
+        s2 = sin(T(pi)/T(2) * x2)
+
+        dc1 = -T(pi)/T(2) * s1
+        ds1 =  T(pi)/T(2) * c1
+        dc2 = -T(pi)/T(2) * s2
+        ds2 =  T(pi)/T(2) * c2
+
+        # Counters for sets J1, J2, J3
+        J1 = 0
+        J2 = 0
+        J3 = 0
+        for j in 3:n
+            r = mod(j-1, 3)
+            r == 0 ? (J1 += 1) : (r == 1 ? (J2 += 1) : (J3 += 1))
+        end
+
+        # Precompute y_j, derivatives and h'(y_j)
+        ys      = Vector{T}(undef, n)
+        dy1     = Vector{T}(undef, n)  # dy/dx1
+        dy2     = Vector{T}(undef, n)  # dy/dx2
+        dh      = Vector{T}(undef, n)  # h'(y)
+        isJ1    = falses(n)
+        isJ2    = falses(n)
+        isJ3    = falses(n)
+
+        for j in 3:n
+            θ  = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+            sθ = sin(θ)
+            cθ = cos(θ)
+
+            y = x[j] - T(2)*x2*sθ
+
+            ys[j]  = y
+            dy1[j] = -T(4)*T(pi)*x2*cθ
+            dy2[j] = -T(2)*sθ
+
+            # h'(y) = 8 y + 8π sin(8π y)
+            dh[j] = T(8)*y + T(8)*T(pi)*sin(T(8)*T(pi)*y)
+
+            r = mod(j-1, 3)
+            if r == 0
+                isJ1[j] = true
+            elseif r == 1
+                isJ2[j] = true
+            else
+                isJ3[j] = true
+            end
+        end
+
+        if ind == 1
+            sumx1 = ZERO
+            sumx2 = ZERO
+
+            for j in 3:n
+                if isJ1[j]
+                    # ∂f1/∂x_j
+                    g[j] = (T(2) / T(J1)) * dh[j]
+
+                    sumx1 += dh[j] * dy1[j]
+                    sumx2 += dh[j] * dy2[j]
+                end
+            end
+
+            g[1] = dc1*c2 + (T(2) / T(J1)) * sumx1
+            g[2] = c1*dc2 + (T(2) / T(J1)) * sumx2
+
+        elseif ind == 2
+            sumx1 = ZERO
+            sumx2 = ZERO
+
+            for j in 3:n
+                if isJ2[j]
+                    g[j] = (T(2) / T(J2)) * dh[j]
+
+                    sumx1 += dh[j] * dy1[j]
+                    sumx2 += dh[j] * dy2[j]
+                end
+            end
+
+            g[1] = dc1*s2 + (T(2) / T(J2)) * sumx1
+            g[2] = c1*ds2 + (T(2) / T(J2)) * sumx2
+
+        elseif ind == 3
+            sumx1 = ZERO
+            sumx2 = ZERO
+
+            for j in 3:n
+                if isJ3[j]
+                    g[j] = (T(2) / T(J3)) * dh[j]
+
+                    sumx1 += dh[j] * dy1[j]
+                    sumx2 += dh[j] * dy2[j]
+                end
+            end
+
+            g[1] = ds1 + (T(2) / T(J3)) * sumx1
+            g[2] =          (T(2) / T(J3)) * sumx2
+        end
+
+
+
+
+
+
+    
+    
+
+    
+
+    
+
+
+    elseif PROBLEM == "AP1"
         if ind == 1
             g .= [(x[1]-1)^3, 2*(x[2]-2)^3]
         elseif ind == 2
@@ -1107,9 +3092,6 @@ function evalg!(n::Int, x::Vector{T}, g::Vector{T}, ind::Int) where {T<:Abstract
         elseif ind == 3
             g .= [-1/4*exp(-x[1]), -1/3*exp(-x[2]), -1/4*exp(-x[3])]
         end
-
-    elseif PROBLEM == "BK1"
-        g .= ind == 1 ? 2 .* x : 2 .* (x .- 5)
 
     elseif PROBLEM == "DD1"
         if ind == 1
@@ -1833,19 +3815,1097 @@ function evalg!(n::Int, x::Vector{T}, g::Vector{T}, ind::Int) where {T<:Abstract
         g[ind] += -2 
 
     else
-        error("Unknown PROBLEM: $PROBLEM")
+        error("Unknown problem: $PROBLEM")
     end
 end
 
 # ======================================================================
 # Hessiana ∇²f_i(x)
 # ======================================================================
+"""
+--------------------------------------------------------------------------------
+evalh! — Hessian evaluation (in-place)
+--------------------------------------------------------------------------------
 
-function evalh!(n::Int, x::Vector{T}, H::Matrix{T}, ind::Int) where {T<:AbstractFloat}
+Computes the Hessian matrix ∇²f_ind(x) of the selected objective function and
+stores it in-place in the matrix `H`.
+
+--------------------------------------------------------------------------------
+Inputs:
+
+    ind :: Int        → Objective function index
+    x   :: Vector{T} → Current point
+    n   :: Int        → Number of variables
+
+--------------------------------------------------------------------------------
+In-place Output:
+
+    H :: Matrix{T}   → Hessian ∇²f_ind(x)
+
+--------------------------------------------------------------------------------
+"""
+function evalh!(H::Matrix{T}, ind::Int, x::Vector{T}, n::Int) where {T<:AbstractFloat}
     
-    H .= zeros(T, n, n)
+    fill!(H, ZERO)
 
-    if PROBLEM == "AP1"
+    if PROBLEM == "F1"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        # Count J1 and J2
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            # Hessian of (2/J1) * Σ y^2, with y = xj - x1^a
+            fac = T(4) / T(J1)  # since (2/J)*2 = 4/J
+
+            for j in 2:n
+                if isodd(j)
+                    a   = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))
+                    xa  = x1^a
+                    y   = x[j] - xa
+
+                    du  = a * x1^(a - ONE)                 # d(x1^a)/dx1
+                    d2u = a * (a - ONE) * x1^(a - T(2))    # d²(x1^a)/dx1²
+
+                    # ∂²/∂xj²: fac
+                    H[j,j] += fac
+
+                    # ∂²/∂x1∂xj = ∂/∂x1 (fac*y) = fac*dy/dx1 = -fac*du
+                    H[1,j] += -fac * du
+                    H[j,1]  = H[1,j]
+
+                    # ∂²/∂x1² contribution:
+                    # d/dx1[-fac*y*du] = fac*(du^2 - y*d2u)
+                    H[1,1] += fac * (du^2 - y * d2u)
+                end
+            end
+
+        elseif ind == 2
+            fac = T(4) / T(J2)
+
+            for j in 2:n
+                if iseven(j)
+                    a   = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))
+                    xa  = x1^a
+                    y   = x[j] - xa
+
+                    du  = a * x1^(a - ONE)
+                    d2u = a * (a - ONE) * x1^(a - T(2))
+
+                    H[j,j] += fac
+                    H[1,j] += -fac * du
+                    H[j,1]  = H[1,j]
+
+                    H[1,1] += fac * (du^2 - y * d2u)
+                end
+            end
+
+            # Hessian of -sqrt(x1): d²/dx1² = +1/(4*x1^(3/2))
+            H[1,1] += inv(T(4) * x1^(T(3)/T(2)))
+        end
+
+    elseif PROBLEM == "F2"
+
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        sum11 = ZERO
+        sum22 = ZERO
+
+        # Accumulate terms for H[1,1]
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            s = sin(θ)
+            c = cos(θ)
+            y = x[j] - s
+
+            term = c^2 + y*s   # <-- corrected sign
+
+            if isodd(j)
+                J1 += 1
+                if ind == 1
+                    sum11 += term
+                end
+            else
+                J2 += 1
+                if ind == 2
+                    sum22 += term
+                end
+            end
+        end
+
+        # Second derivative w.r.t. x1
+        if ind == 1
+            H[1,1] = (144*T(pi)^2 / T(J1)) * sum11
+        elseif ind == 2
+            H[1,1] = inv(4*x1^(3//2)) + (144*T(pi)^2 / T(J2)) * sum22
+        end
+
+        # Mixed and diagonal terms
+        for j in 2:n
+            θ = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            c = cos(θ)
+
+            if ind == 1 && isodd(j)
+                H[j,j] = 4 / T(J1)
+
+                H[1,j] = -(24*T(pi)/T(J1)) * c
+                H[j,1] = H[1,j]
+
+            elseif ind == 2 && iseven(j)
+                H[j,j] = 4 / T(J2)
+
+                H[1,j] = -(24*T(pi)/T(J2)) * c
+                H[j,1] = H[1,j]
+            end
+        end
+
+    elseif PROBLEM == "F3"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            fac = T(4) / T(J1)
+
+            for j in 2:n
+                θ  = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+
+                if isodd(j)
+                    y = x[j] - T(0.8) * x1 * cos(θ)
+
+                    # First derivatives
+                    dy1 = -T(0.8) * cos(θ) + T(0.8) * x1 * sin(θ) * T(6) * T(pi)
+
+                    # Second derivative d²y/dx1²
+                    d2y1 =
+                        T(1.6) * sin(θ) * T(6) * T(pi) +
+                        T(0.8) * x1 * cos(θ) * (T(6) * T(pi))^2
+
+                    # ∂²/∂xj²
+                    H[j,j] += fac
+
+                    # mixed derivative ∂²/∂x1∂xj
+                    H[1,j] += fac * dy1
+                    H[j,1]  = H[1,j]
+
+                    # ∂²/∂x1²
+                    H[1,1] += fac * (dy1^2 + y * d2y1)
+                end
+            end
+
+        elseif ind == 2
+            fac = T(4) / T(J2)
+
+            for j in 2:n
+                θ  = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+
+                if iseven(j)
+                    y = x[j] - T(0.8) * x1 * sin(θ)
+
+                    dy1 = -T(0.8) * sin(θ) - T(0.8) * x1 * cos(θ) * T(6) * T(pi)
+
+                    d2y1 =
+                        -T(1.6) * cos(θ) * T(6) * T(pi) +
+                        T(0.8) * x1 * sin(θ) * (T(6) * T(pi))^2
+
+                    H[j,j] += fac
+                    H[1,j] += fac * dy1
+                    H[j,1]  = H[1,j]
+
+                    H[1,1] += fac * (dy1^2 + y * d2y1)
+                end
+            end
+
+            # Hessian of -sqrt(x1)
+            H[1,1] += inv(T(4) * x1^(T(3)/T(2)))
+        end
+
+    elseif PROBLEM == "F4"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            fac = T(4) / T(J1)
+
+            for j in 2:n
+                if isodd(j)
+                    θ1 = (T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)) / T(3)
+                    y  = x[j] - T(0.8) * x1 * cos(θ1)
+
+                    dy1  = -T(0.8) * cos(θ1) +
+                        T(0.8) * x1 * sin(θ1) * (T(6) * T(pi) / T(3))
+
+                    d2y1 =  T(1.6) * sin(θ1) * (T(6) * T(pi) / T(3)) +
+                            T(0.8) * x1 * cos(θ1) * (T(6) * T(pi) / T(3))^2
+
+                    H[j,j] += fac
+                    H[1,j] += fac * dy1
+                    H[j,1]  = H[1,j]
+
+                    H[1,1] += fac * (dy1^2 + y * d2y1)
+                end
+            end
+
+        elseif ind == 2
+            fac = T(4) / T(J2)
+
+            for j in 2:n
+                if iseven(j)
+                    θ2 = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+                    y  = x[j] - T(0.8) * x1 * sin(θ2)
+
+                    dy1  = -T(0.8) * sin(θ2) -
+                        T(0.8) * x1 * cos(θ2) * T(6) * T(pi)
+
+                    d2y1 = -T(1.6) * cos(θ2) * T(6) * T(pi) +
+                            T(0.8) * x1 * sin(θ2) * (T(6) * T(pi))^2
+
+                    H[j,j] += fac
+                    H[1,j] += fac * dy1
+                    H[j,1]  = H[1,j]
+
+                    H[1,1] += fac * (dy1^2 + y * d2y1)
+                end
+            end
+
+            # Hessian of -sqrt(x1)
+            H[1,1] += inv(T(4) * x1^(T(3)/T(2)))
+        end
+
+    elseif PROBLEM == "F5"
+
+        x1 = x[1]
+
+        # First pass: correct counts of J1 and J2
+        J1 = 0
+        J2 = 0
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        sum11 = ZERO
+        sum22 = ZERO
+
+        # Second pass: Hessian components
+        for j in 2:n
+            θ1 = 24*T(pi)*x1 + 4*T(j)*T(pi)/T(n)
+            θ2 =  6*T(pi)*x1 +   T(j)*T(pi)/T(n)
+
+            A   = 0.3*x1^2 * cos(θ1) + 0.6*x1
+            dA  = 0.6*x1 * cos(θ1) - 7.2*T(pi)*x1^2 * sin(θ1) + 0.6
+            d2A = 0.6*cos(θ1) -
+                  28.8*T(pi)*x1*sin(θ1) -
+                 172.8*T(pi)^2*x1^2*cos(θ1)
+
+            if isodd(j)
+                # J1: cosine branch (only affects f1)
+                y   = x[j] - A * cos(θ2)
+                dy  = -dA * cos(θ2) + 6*T(pi)*A * sin(θ2)
+                d2y = -d2A * cos(θ2) +
+                       12*T(pi)*dA * sin(θ2) +
+                       36*T(pi)^2*A * cos(θ2)
+
+                if ind == 1
+                    # Contribution to d²f1/dx1²
+                    sum11 += dy^2 + y*d2y
+
+                    # d²f1/dxj²
+                    H[j,j] = 4 / T(J1)
+
+                    # d²f1/dx1dxj (symmetric)
+                    H[1,j] = (4 / T(J1)) * dy
+                    H[j,1] = H[1,j]
+                end
+
+            else
+                # J2: sine branch (only affects f2)
+                y   = x[j] - A * sin(θ2)
+                dy  = -dA * sin(θ2) - 6*T(pi)*A * cos(θ2)
+                d2y = -d2A * sin(θ2) -
+                       12*T(pi)*dA * cos(θ2) +
+                       36*T(pi)^2*A * sin(θ2)
+
+                if ind == 2
+                    # Contribution to d²f2/dx1²
+                    sum22 += dy^2 + y*d2y
+
+                    # d²f2/dxj²
+                    H[j,j] = 4 / T(J2)
+
+                    # d²f2/dx1dxj (symmetric)
+                    H[1,j] = (4 / T(J2)) * dy
+                    H[j,1] = H[1,j]
+                end
+            end
+        end
+
+        # Second derivative with respect to x1
+        if ind == 1
+            H[1,1] = (4 / T(J1)) * sum11
+        elseif ind == 2
+            H[1,1] = T(0.25) / (x1 * sqrt(x1)) + (4 / T(J2)) * sum22
+        end
+    
+    elseif PROBLEM == "F6"
+
+        x1 = x[1]
+        x2 = x[2]
+
+        c1 = cos(T(pi)/T(2) * x1)
+        s1 = sin(T(pi)/T(2) * x1)
+        c2 = cos(T(pi)/T(2) * x2)
+        s2 = sin(T(pi)/T(2) * x2)
+
+        dc1 = -T(pi)/T(2) * s1
+        ds1 =  T(pi)/T(2) * c1
+        dc2 = -T(pi)/T(2) * s2
+        ds2 =  T(pi)/T(2) * c2
+
+        d2c1 = -T(pi)^2 / T(4) * c1
+        d2s1 = -T(pi)^2 / T(4) * s1
+        d2c2 = -T(pi)^2 / T(4) * c2
+        d2s2 = -T(pi)^2 / T(4) * s2
+
+        # Count J1, J2, J3
+        J1 = 0
+        J2 = 0
+        J3 = 0
+        for j in 3:n
+            r = mod(j-1, 3)
+            r == 0 ? (J1 += 1) : (r == 1 ? (J2 += 1) : (J3 += 1))
+        end
+
+        sum11 = ZERO
+        sum22 = ZERO
+        sum12 = ZERO
+
+        for j in 3:n
+            θ  = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+            sθ = sin(θ)
+            cθ = cos(θ)
+
+            y = x[j] - T(2)*x2*sθ
+
+            # First derivatives
+            dy_dx1 = -T(4)*T(pi)*x2*cθ
+            dy_dx2 = -T(2)*sθ
+
+            # Second derivatives
+            d2y_dx1 =  T(8)*T(pi)^2*x2*sθ
+            d2y_dx2 = ZERO
+            d2y_dx1x2 = -T(4)*T(pi)*cθ
+
+            r = mod(j-1, 3)
+
+            active =
+                (ind == 1 && r == 0) ||
+                (ind == 2 && r == 1) ||
+                (ind == 3 && r == 2)
+
+            if active
+                J = ind == 1 ? J1 : (ind == 2 ? J2 : J3)
+
+                sum11 += T(2) * (dy_dx1^2 + y * d2y_dx1)
+                sum22 += T(2) * (dy_dx2^2 + y * d2y_dx2)
+                sum12 += T(2) * (dy_dx1 * dy_dx2 + y * d2y_dx1x2)
+
+                # Diagonal block
+                H[j,j] = T(4) / T(J)
+
+                # Mixed blocks
+                H[1,j] = (T(4) / T(J)) * dy_dx1
+                H[j,1] = H[1,j]
+
+                H[2,j] = (T(4) / T(J)) * dy_dx2
+                H[j,2] = H[2,j]
+            end
+        end
+
+        if ind == 1
+            H[1,1] = d2c1*c2 + (T(2) / T(J1)) * sum11
+            H[2,2] = c1*d2c2 + (T(2) / T(J1)) * sum22
+            H[1,2] = dc1*dc2 + (T(2) / T(J1)) * sum12
+            H[2,1] = H[1,2]
+
+        elseif ind == 2
+            H[1,1] = d2c1*s2 + (T(2) / T(J2)) * sum11
+            H[2,2] = c1*d2s2 + (T(2) / T(J2)) * sum22
+            H[1,2] = dc1*ds2 + (T(2) / T(J2)) * sum12
+            H[2,1] = H[1,2]
+
+        elseif ind == 3
+            H[1,1] = d2s1 + (T(2) / T(J3)) * sum11
+            H[2,2] = (T(2) / T(J3)) * sum22
+            H[1,2] = (T(2) / T(J3)) * sum12
+            H[2,1] = H[1,2]
+        end
+    
+    elseif PROBLEM == "F7"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            fac = T(2) / T(J1)
+
+            for j in 2:n
+                if isodd(j)
+                    a  = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))
+                    xa = x1^a
+                    y  = x[j] - xa
+
+                    # First derivatives
+                    dy1 = -a * x1^(a - ONE)
+
+                    # Second derivative d²y/dx1²
+                    d2y1 = -a * (a - ONE) * x1^(a - T(2))
+
+                    # d²φ/dy² = 8 + 64π² cos(8πy)
+                    d2φ = T(8) + T(64) * T(pi)^2 * cos(T(8) * T(pi) * y)
+
+                    # dφ/dy
+                    dφ = T(8) * y + T(8) * T(pi) * sin(T(8) * T(pi) * y)
+
+                    # ∂²/∂xj²
+                    H[j,j] += fac * d2φ
+
+                    # mixed derivative
+                    H[1,j] += fac * d2φ * dy1
+                    H[j,1]  = H[1,j]
+
+                    # ∂²/∂x1²
+                    H[1,1] += fac * (d2φ * dy1^2 + dφ * d2y1)
+                end
+            end
+
+        elseif ind == 2
+            fac = T(2) / T(J2)
+
+            for j in 2:n
+                if iseven(j)
+                    a  = T(0.5) * (ONE + T(3) * T(j - 2) / T(n - 2))
+                    xa = x1^a
+                    y  = x[j] - xa
+
+                    dy1  = -a * x1^(a - ONE)
+                    d2y1 = -a * (a - ONE) * x1^(a - T(2))
+
+                    dφ  = T(8) * y + T(8) * T(pi) * sin(T(8) * T(pi) * y)
+                    d2φ = T(8) + T(64) * T(pi)^2 * cos(T(8) * T(pi) * y)
+
+                    H[j,j] += fac * d2φ
+                    H[1,j] += fac * d2φ * dy1
+                    H[j,1]  = H[1,j]
+
+                    H[1,1] += fac * (d2φ * dy1^2 + dφ * d2y1)
+                end
+            end
+
+            # Hessian of -sqrt(x1)
+            H[1,1] += inv(T(4) * x1^(T(3)/T(2)))
+        end
+    
+    elseif PROBLEM == "F9"
+        x1 = x[1]
+        J1 = 0
+        J2 = 0
+
+        for j in 2:n
+            if isodd(j)
+                J1 += 1
+            else
+                J2 += 1
+            end
+        end
+
+        if ind == 1
+            fac = T(4) / T(J1)
+
+            for j in 2:n
+                if isodd(j)
+                    θ  = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+                    y  = x[j] - sin(θ)
+
+                    # dy/dx1 = -6π cos(θ)
+                    dy1 = -T(6) * T(pi) * cos(θ)
+
+                    # d²y/dx1² = 36π² sin(θ)
+                    d2y1 = (T(6) * T(pi))^2 * sin(θ)
+
+                    # ∂²/∂xj²
+                    H[j,j] += fac
+
+                    # mixed derivative ∂²/∂x1∂xj = fac * dy1
+                    H[1,j] += fac * dy1
+                    H[j,1]  = H[1,j]
+
+                    # ∂²/∂x1² = fac * (dy1^2 + y * d2y1)
+                    H[1,1] += fac * (dy1^2 + y * d2y1)
+                end
+            end
+
+            return
+
+        elseif ind == 2
+            fac = T(4) / T(J2)
+
+            for j in 2:n
+                if iseven(j)
+                    θ  = T(6) * T(pi) * x1 + T(j) * T(pi) / T(n)
+                    y  = x[j] - sin(θ)
+
+                    dy1  = -T(6) * T(pi) * cos(θ)
+                    d2y1 = (T(6) * T(pi))^2 * sin(θ)
+
+                    H[j,j] += fac
+                    H[1,j] += fac * dy1
+                    H[j,1]  = H[1,j]
+
+                    H[1,1] += fac * (dy1^2 + y * d2y1)
+                end
+            end
+
+            # Hessian of 1 - x1^2 is -2
+            H[1,1] += -T(2)
+
+            return
+        end
+
+
+    elseif PROBLEM == "CEC05"
+
+        x1 = x[1]
+
+        # Parameters of the central term
+        N   = T(10)
+        eps = T(0.1)
+        A   = inv(T(2)*N) + eps     # (1/(2N) + eps)
+
+        # Central term second derivative w.r.t. x1
+        s     = sin(T(2)*N*T(pi)*x1)
+        c2N   = cos(T(2)*N*T(pi)*x1)
+        sgn   = sign(s)
+
+        # d/dx1 |sin(2Nπx1)| = sign(sin)*2Nπ*cos(2Nπx1)
+        # d2/dx1^2 |sin(2Nπx1)| = sign(sin)*(-(2Nπ)^2*sin(2Nπx1))
+        d2_abs = sgn * (-(T(2)*N*T(pi))^2 * s)
+
+        H11_central = A * d2_abs
+
+        # First pass: exact counts of J1 and J2
+        J1 = 0
+        J2 = 0
+        for j in 2:n
+            isodd(j) ? (J1 += 1) : (J2 += 1)
+        end
+
+        sum11 = ZERO
+        sum22 = ZERO
+
+        # Second pass: Hessian contributions
+        for j in 2:n
+            θ  = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+            sθ = sin(θ)
+            cθ = cos(θ)
+
+            y = x[j] - sθ
+
+            # h'(y) and h''(y)
+            dhdy  = T(4)*y + T(4)*T(pi)*sin(T(4)*T(pi)*y)
+            d2hdy = T(4) + T(16)*T(pi)^2 * cos(T(4)*T(pi)*y)
+
+            # dy/dx1 and d2y/dx1^2
+            dy_dx1  = -T(6)*T(pi)*cθ
+            d2y_dx1 =  T(36)*T(pi)^2 * sθ
+
+            if isodd(j)
+                if ind == 1
+                    # Contribution to H[1,1]
+                    sum11 += d2hdy * dy_dx1^2 + dhdy * d2y_dx1
+
+                    # Second derivative w.r.t xj
+                    H[j,j] = (T(2) / T(J1)) * d2hdy
+
+                    # Mixed derivative d2/dx1dxj
+                    H[1,j] = (T(2) / T(J1)) * d2hdy * dy_dx1
+                    H[j,1] = H[1,j]
+                end
+            else
+                if ind == 2
+                    # Contribution to H[1,1]
+                    sum22 += d2hdy * dy_dx1^2 + dhdy * d2y_dx1
+
+                    # Second derivative w.r.t xj
+                    H[j,j] = (T(2) / T(J2)) * d2hdy
+
+                    # Mixed derivative d2/dx1dxj
+                    H[1,j] = (T(2) / T(J2)) * d2hdy * dy_dx1
+                    H[j,1] = H[1,j]
+                end
+            end
+        end
+
+        # Final H[1,1]
+        if ind == 1
+            H[1,1] = H11_central + (T(2) / T(J1)) * sum11
+        elseif ind == 2
+            H[1,1] = H11_central + (T(2) / T(J2)) * sum22
+        end
+
+    elseif PROBLEM == "CEC07"
+
+        x1 = x[1]
+
+        d2x1p = -T(4)/T(25) * x1^(-T(9)/T(5))   # second derivative of x1^(1/5)
+
+        # Count indices in J1 and J2
+        J1 = 0
+        J2 = 0
+        for j in 2:n
+            isodd(j) ? (J1 += 1) : (J2 += 1)
+        end
+
+        if ind == 1 && J1 > 0
+            sum11 = ZERO
+
+            for j in 2:n
+                if isodd(j)
+                    θ  = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+                    sθ = sin(θ)
+                    cθ = cos(θ)
+
+                    y = x[j] - sθ
+
+                    dy_dx1  = -T(6)*T(pi)*cθ
+                    d2y_dx1 =  T(36)*T(pi)^2 * sθ
+
+                    # ∂²(yj²)/∂x1² = 2[(dy/dx1)² + yj d²y/dx1²]
+                    d2yj2_dx1 = T(2) * (dy_dx1^2 + y * d2y_dx1)
+
+                    sum11 += d2yj2_dx1
+
+                    # Mixed second derivative H[1,j]
+                    H[1,j] = (T(4) / T(J1)) * dy_dx1
+                    H[j,1] = H[1,j]
+
+                    # Second derivative w.r.t xj²
+                    H[j,j] = T(4) / T(J1)
+                end
+            end
+
+            H[1,1] = d2x1p + (T(2) / T(J1)) * sum11
+
+        elseif ind == 2 && J2 > 0
+            sum11 = ZERO
+
+            for j in 2:n
+                if iseven(j)
+                    θ  = 6*T(pi)*x1 + T(j)*T(pi)/T(n)
+                    sθ = sin(θ)
+                    cθ = cos(θ)
+
+                    y = x[j] - sθ
+
+                    dy_dx1  = -T(6)*T(pi)*cθ
+                    d2y_dx1 =  T(36)*T(pi)^2 * sθ
+
+                    d2yj2_dx1 = T(2) * (dy_dx1^2 + y * d2y_dx1)
+
+                    sum11 += d2yj2_dx1
+
+                    H[1,j] = (T(4) / T(J2)) * dy_dx1
+                    H[j,1] = H[1,j]
+
+                    H[j,j] = T(4) / T(J2)
+                end
+            end
+
+            H[1,1] = d2x1p + (T(2) / T(J2)) * sum11
+        end
+
+    elseif PROBLEM == "CEC09"
+        
+        x1 = x[1]
+        x2 = x[2]
+
+        # epsilon parameter
+        eps = T(0.1)
+
+        # Central max term g(x1)
+        z   = T(2)*x1 - ONE
+        g0  = (ONE + eps) * (ONE - T(4)*z^2)
+
+        # Piecewise derivatives of max{0,g0}
+        if g0 > ZERO
+            dg  = (ONE + eps) * (-T(16)*z)   # dg/dx1
+            d2g = (ONE + eps) * (-T(32))     # d²g/dx1²
+        else
+            dg  = ZERO
+            d2g = ZERO
+        end
+
+        # Count J1, J2, J3
+        J1 = 0
+        J2 = 0
+        J3 = 0
+        for j in 3:n
+            r = mod(j-1, 3)
+            r == 0 ? (J1 += 1) : (r == 1 ? (J2 += 1) : (J3 += 1))
+        end
+
+        # Common loop will be reused per objective
+        if ind == 1 && J1 > 0
+
+            J = T(J1)
+
+            sum11 = ZERO
+            sum22 = ZERO
+            sum12 = ZERO
+
+            for j in 3:n
+                r = mod(j-1, 3)
+                r != 0 && continue  # only indices in J1
+
+                θ  = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+                sθ = sin(θ)
+                cθ = cos(θ)
+
+                y = x[j] - T(2)*x2*sθ
+
+                # First derivatives of y_j
+                dy1 = -T(4)*T(pi)*x2*cθ      # ∂y/∂x1
+                dy2 = -T(2)*sθ               # ∂y/∂x2
+
+                # Second derivatives of y_j
+                d2y1  =  T(8)*T(pi)^2*x2*sθ  # ∂²y/∂x1²
+                d2y2  = ZERO                 # ∂²y/∂x2²
+                d2y12 = -T(4)*T(pi)*cθ       # ∂²y/∂x1∂x2
+
+                # Contributions to the second derivatives of the sum term
+                # F_sum = (2/J) * Σ y^2
+                # d²F_sum/dx1²  = (4/J) Σ [ (dy1)^2 + y d2y1 ]
+                # d²F_sum/dx2²  = (4/J) Σ [ (dy2)^2 + y d2y2 ]
+                # d²F_sum/dx1dx2= (4/J) Σ [ dy1*dy2 + y d2y12 ]
+                sum11 += dy1^2 + y * d2y1
+                sum22 += dy2^2 + y * d2y2
+                sum12 += dy1 * dy2 + y * d2y12
+
+                # Cross derivatives with x_j:
+                # ∂²F_sum/∂x1∂xj = (4/J) * dy1
+                # ∂²F_sum/∂x2∂xj = (4/J) * dy2
+                # ∂²F_sum/∂xj²   = (4/J)
+                fac = T(4) / J
+
+                H[j,j] += fac
+
+                H[1,j] += fac * dy1
+                H[j,1]  = H[1,j]
+
+                H[2,j] += fac * dy2
+                H[j,2]  = H[2,j]
+            end
+
+            fac = T(4) / T(J1)
+
+            # Front term of f1: 0.5*(max{0,g0} + 2x1)*x2
+            H[1,1] += T(0.5)*d2g*x2 + fac * sum11
+            H[2,2] +=                 fac * sum22
+            H[1,2] += T(0.5)*(dg + T(2)) + fac * sum12
+            H[2,1]  = H[1,2]
+
+        elseif ind == 2 && J2 > 0
+
+            J = T(J2)
+
+            sum11 = ZERO
+            sum22 = ZERO
+            sum12 = ZERO
+
+            for j in 3:n
+                r = mod(j-1, 3)
+                r != 1 && continue  # only indices in J2
+
+                θ  = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+                sθ = sin(θ)
+                cθ = cos(θ)
+
+                y = x[j] - T(2)*x2*sθ
+
+                dy1 = -T(4)*T(pi)*x2*cθ
+                dy2 = -T(2)*sθ
+
+                d2y1  =  T(8)*T(pi)^2*x2*sθ
+                d2y2  = ZERO
+                d2y12 = -T(4)*T(pi)*cθ
+
+                sum11 += dy1^2 + y * d2y1
+                sum22 += dy2^2 + y * d2y2
+                sum12 += dy1 * dy2 + y * d2y12
+
+                fac = T(4) / J
+
+                H[j,j] += fac
+
+                H[1,j] += fac * dy1
+                H[j,1]  = H[1,j]
+
+                H[2,j] += fac * dy2
+                H[j,2]  = H[2,j]
+            end
+
+            fac = T(4) / T(J2)
+
+            # Front term of f2: 0.5*(max{0,g0} - 2x1 + 2)*x2
+            H[1,1] += T(0.5)*d2g*x2 + fac * sum11
+            H[2,2] +=                 fac * sum22
+            H[1,2] += T(0.5)*(dg - T(2)) + fac * sum12
+            H[2,1]  = H[1,2]
+
+        elseif ind == 3 && J3 > 0
+
+            J = T(J3)
+
+            sum11 = ZERO
+            sum22 = ZERO
+            sum12 = ZERO
+
+            for j in 3:n
+                r = mod(j-1, 3)
+                r != 2 && continue  # only indices in J3
+
+                θ  = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+                sθ = sin(θ)
+                cθ = cos(θ)
+
+                y = x[j] - T(2)*x2*sθ
+
+                dy1 = -T(4)*T(pi)*x2*cθ
+                dy2 = -T(2)*sθ
+
+                d2y1  =  T(8)*T(pi)^2*x2*sθ
+                d2y2  = ZERO
+                d2y12 = -T(4)*T(pi)*cθ
+
+                sum11 += dy1^2 + y * d2y1
+                sum22 += dy2^2 + y * d2y2
+                sum12 += dy1 * dy2 + y * d2y12
+
+                fac = T(4) / J
+
+                H[j,j] += fac
+
+                H[1,j] += fac * dy1
+                H[j,1]  = H[1,j]
+
+                H[2,j] += fac * dy2
+                H[j,2]  = H[2,j]
+            end
+
+            fac = T(4) / T(J3)
+
+            # Front term of f3: 1 - x2  → Hessian = 0
+            H[1,1] += fac * sum11
+            H[2,2] += fac * sum22
+            H[1,2] += fac * sum12
+            H[2,1]  = H[1,2]
+        end
+
+    elseif PROBLEM == "CEC10"
+
+        x1 = x[1]
+        x2 = x[2]
+
+        # Front trigonometric terms
+        c1 = cos(T(pi)/T(2) * x1)
+        s1 = sin(T(pi)/T(2) * x1)
+        c2 = cos(T(pi)/T(2) * x2)
+        s2 = sin(T(pi)/T(2) * x2)
+
+        dc1 = -T(pi)/T(2) * s1
+        ds1 =  T(pi)/T(2) * c1
+        dc2 = -T(pi)/T(2) * s2
+        ds2 =  T(pi)/T(2) * c2
+
+        d2c1 = -T(pi)^2 / T(4) * c1
+        d2s1 = -T(pi)^2 / T(4) * s1
+        d2c2 = -T(pi)^2 / T(4) * c2
+        d2s2 = -T(pi)^2 / T(4) * s2
+
+        # Counters
+        J1 = 0
+        J2 = 0
+        J3 = 0
+        for j in 3:n
+            r = mod(j-1, 3)
+            r == 0 ? (J1 += 1) : (r == 1 ? (J2 += 1) : (J3 += 1))
+        end
+
+        # Precompute y_j, derivatives, h'(y_j), h''(y_j)
+        ys   = Vector{T}(undef, n)
+        dy1  = Vector{T}(undef, n)
+        dy2  = Vector{T}(undef, n)
+        d2y1 = Vector{T}(undef, n)
+        d2y2 = Vector{T}(undef, n)
+        d2y12 = Vector{T}(undef, n)
+        dh   = Vector{T}(undef, n)
+        d2h  = Vector{T}(undef, n)
+        isJ1 = falses(n)
+        isJ2 = falses(n)
+        isJ3 = falses(n)
+
+        for j in 3:n
+            θ  = T(2)*T(pi)*x1 + T(j)*T(pi)/T(n)
+            sθ = sin(θ)
+            cθ = cos(θ)
+
+            y = x[j] - T(2)*x2*sθ
+
+            ys[j]   = y
+            dy1[j]  = -T(4)*T(pi)*x2*cθ
+            dy2[j]  = -T(2)*sθ
+            d2y1[j] =  T(8)*T(pi)^2*x2*sθ
+            d2y2[j] = ZERO
+            d2y12[j]= -T(4)*T(pi)*cθ
+
+            # h'(y) and h''(y)
+            dh[j]  = T(8)*y + T(8)*T(pi)*sin(T(8)*T(pi)*y)
+            d2h[j] = T(8) + T(64)*T(pi)^2 * cos(T(8)*T(pi)*y)
+
+            r = mod(j-1, 3)
+            if r == 0
+                isJ1[j] = true
+            elseif r == 1
+                isJ2[j] = true
+            else
+                isJ3[j] = true
+            end
+        end
+
+        sum11 = ZERO
+        sum22 = ZERO
+        sum12 = ZERO
+
+        if ind == 1 && J1 > 0
+            J = T(J1)
+
+            for j in 3:n
+                if isJ1[j]
+                    # Second derivatives of the sum term
+                    sum11 += d2h[j] * dy1[j]^2 + dh[j] * d2y1[j]
+                    sum22 += d2h[j] * dy2[j]^2 + dh[j] * d2y2[j]
+                    sum12 += d2h[j] * dy1[j]*dy2[j] + dh[j] * d2y12[j]
+
+                    # Blocks involving x_j
+                    H[j,j] = (T(2)/J) * d2h[j]
+                    H[1,j] = (T(2)/J) * d2h[j] * dy1[j]
+                    H[j,1] = H[1,j]
+                    H[2,j] = (T(2)/J) * d2h[j] * dy2[j]
+                    H[j,2] = H[2,j]
+                end
+            end
+
+            H[1,1] = d2c1*c2 + (T(2)/J) * sum11
+            H[2,2] = c1*d2c2 + (T(2)/J) * sum22
+            H[1,2] = dc1*dc2 + (T(2)/J) * sum12
+            H[2,1] = H[1,2]
+
+        elseif ind == 2 && J2 > 0
+            J = T(J2)
+
+            for j in 3:n
+                if isJ2[j]
+                    sum11 += d2h[j] * dy1[j]^2 + dh[j] * d2y1[j]
+                    sum22 += d2h[j] * dy2[j]^2 + dh[j] * d2y2[j]
+                    sum12 += d2h[j] * dy1[j]*dy2[j] + dh[j] * d2y12[j]
+
+                    H[j,j] = (T(2)/J) * d2h[j]
+                    H[1,j] = (T(2)/J) * d2h[j] * dy1[j]
+                    H[j,1] = H[1,j]
+                    H[2,j] = (T(2)/J) * d2h[j] * dy2[j]
+                    H[j,2] = H[2,j]
+                end
+            end
+
+            H[1,1] = d2c1*s2 + (T(2)/J) * sum11
+            H[2,2] = c1*d2s2 + (T(2)/J) * sum22
+            H[1,2] = dc1*ds2 + (T(2)/J) * sum12
+            H[2,1] = H[1,2]
+
+        elseif ind == 3 && J3 > 0
+            J = T(J3)
+
+            for j in 3:n
+                if isJ3[j]
+                    sum11 += d2h[j] * dy1[j]^2 + dh[j] * d2y1[j]
+                    sum22 += d2h[j] * dy2[j]^2 + dh[j] * d2y2[j]
+                    sum12 += d2h[j] * dy1[j]*dy2[j] + dh[j] * d2y12[j]
+
+                    H[j,j] = (T(2)/J) * d2h[j]
+                    H[1,j] = (T(2)/J) * d2h[j] * dy1[j]
+                    H[j,1] = H[1,j]
+                    H[2,j] = (T(2)/J) * d2h[j] * dy2[j]
+                    H[j,2] = H[2,j]
+                end
+            end
+
+            H[1,1] = d2s1 + (T(2)/J) * sum11
+            H[2,2] =          (T(2)/J) * sum22
+            H[1,2] =          (T(2)/J) * sum12
+            H[2,1] = H[1,2]
+        end
+
+
+
+
+
+
+
+    
+    
+    
+    
+
+
+    elseif PROBLEM == "AP1"
         if ind == 1
             H[1,1] = 3*(x[1]-1)^2
             H[2,2] = 6*(x[2]-2)^2
@@ -1887,9 +4947,6 @@ function evalh!(n::Int, x::Vector{T}, H::Matrix{T}, ind::Int) where {T<:Abstract
             H[2,2] = (1/3)*exp(-x[2])
             H[3,3] = (1/4)*exp(-x[3])
         end
-
-    elseif PROBLEM == "BK1"
-        H .= 2.0 * Matrix{T}(I, n, n)
         
     elseif PROBLEM == "DD1"
         if ind == 1
@@ -3202,6 +6259,6 @@ function evalh!(n::Int, x::Vector{T}, H::Matrix{T}, ind::Int) where {T<:Abstract
             H[i,i] = 2.0
         end
     else
-        error("Unknown PROBLEM: $PROBLEM")
+        # error("Unknown problem: $PROBLEM")
     end
 end
