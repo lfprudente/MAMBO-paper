@@ -69,8 +69,8 @@ Clone the repository and activate the environment:
 Inside Julia, instantiate all dependencies and register the local metrics package:
 
     import Pkg
-    Pkg.instantiate()
     Pkg.develop(path="metrics")
+    Pkg.instantiate()
 
 ## Recommended Execution Workflow
 
@@ -113,6 +113,7 @@ From the repository root, execute:
 ## 📄 **License**
 
 This project is licensed under the **GNU General Public License (GPL) version 3**. For more details, see the **LICENSE** file included in this repository.
+
 
 
 
