@@ -61,7 +61,7 @@ The following performance metrics are implemented:
 
 Clone the repository and activate the environment:
 
-    git clone https://github.com/lfprudente/MAMBO.git
+    git clone https://github.com/lfprudente/MAMBO-paper.git
     cd MAMBO
     julia --project=.
     
@@ -113,4 +113,5 @@ From the repository root, execute:
 ## 📄 **License**
 
 This project is licensed under the **GNU General Public License (GPL) version 3**. For more details, see the **LICENSE** file included in this repository.
+
 
